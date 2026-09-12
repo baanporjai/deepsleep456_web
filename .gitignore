@@ -8,3 +8,6 @@
 
 __pycache__/
 *.pyc
+
+# local wrangler state from `wrangler pages`/`wrangler dev`
+.wrangler/
