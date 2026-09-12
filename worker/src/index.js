@@ -337,8 +337,16 @@ async function readJson(request) {
   }
 }
 
+// The admin page's real home is env.CORS_ORIGIN (deepsleep456.com), but while
+// the custom domain is still stuck on the old GitHub repo the page is only
+// reachable at the GitHub Pages URL below — allow it too so the admin UI
+// isn't silently broken by CORS in the meantime.
+const TEMPORARY_ALLOWED_ORIGINS = ["https://baanporjai.github.io"];
+
 function corsHeaders(env, origin) {
-  const allowedOrigin = origin === env.CORS_ORIGIN ? origin : env.CORS_ORIGIN;
+  const allowedOrigin = origin === env.CORS_ORIGIN || TEMPORARY_ALLOWED_ORIGINS.includes(origin)
+    ? origin
+    : env.CORS_ORIGIN;
   return {
     "access-control-allow-origin": allowedOrigin,
     "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",

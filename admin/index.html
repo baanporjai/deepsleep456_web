@@ -15,53 +15,37 @@
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-800">
 
-<!-- Login gate -->
-<div id="loginGate" class="min-h-screen flex items-center justify-center px-4" style="background:linear-gradient(135deg,#f0fdfa 0%,#ffffff 55%)">
-  <div class="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg">
-    <div class="mb-5 flex flex-col items-center text-center">
-      <span class="mb-3 inline-block rounded-full bg-gradient-to-r from-teal-50 to-orange-50 px-4 py-1 text-xs font-bold tracking-wide text-slate-800">BACK OFFICE</span>
-      <h1 class="text-xl font-bold text-slate-800">Deepsleep456</h1>
-      <p class="mt-1 text-sm text-slate-500">เข้าสู่ระบบเพื่อจัดการการจองที่พัก</p>
+<header class="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+    <div>
+      <span class="inline-block rounded-full bg-gradient-to-r from-teal-50 to-orange-50 px-3 py-0.5 text-[11px] font-bold tracking-wide text-slate-700">BACK OFFICE</span>
+      <h1 class="text-lg font-bold text-slate-800">Deepsleep456 · ระบบจัดการการจอง</h1>
     </div>
-    <div class="space-y-4">
-      <div>
-        <label class="mb-1 block text-sm font-medium text-slate-700">Worker API URL</label>
-        <input id="apiUrl" type="url" placeholder="https://deepsleep456-booking-api.workers.dev"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
-      </div>
-      <div>
-        <label class="mb-1 block text-sm font-medium text-slate-700">รหัสผ่าน (Access Token)</label>
-        <input id="apiToken" type="password" autocomplete="off" placeholder="token จาก wrangler secret put ADMIN_TOKEN"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
-      </div>
-      <button id="loginBtn" type="button"
-              class="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60">
-        เข้าสู่ระบบ
-      </button>
-      <p id="loginError" class="text-center text-xs text-rose-600 min-h-4"></p>
-      <p class="text-center text-xs text-slate-400">Token เก็บไว้เฉพาะใน session ของเบราว์เซอร์นี้ ไม่ถูกส่งไปที่ใดนอกจาก Worker API</p>
+
+    <!-- Shown only when not authenticated: one field, right here, no separate screen -->
+    <div id="authBar" class="flex items-center gap-2">
+      <input id="apiToken" type="password" autocomplete="off" placeholder="รหัสผ่าน"
+             class="w-40 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500">
+      <button id="loginBtn" class="rounded-lg bg-teal-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-700">เข้าใช้งาน</button>
+    </div>
+
+    <!-- Shown only when authenticated -->
+    <div id="statusBar" class="hidden flex items-center gap-3">
+      <span id="connState" class="rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">เชื่อมต่อแล้ว</span>
+      <button id="logoutBtn" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100">ออกจากระบบ</button>
     </div>
   </div>
-</div>
+</header>
 
-<!-- Dashboard -->
-<div id="dashboardApp" class="hidden min-h-screen">
-  <header class="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-      <div>
-        <span class="inline-block rounded-full bg-gradient-to-r from-teal-50 to-orange-50 px-3 py-0.5 text-[11px] font-bold tracking-wide text-slate-700">BACK OFFICE</span>
-        <h1 class="text-lg font-bold text-slate-800">Deepsleep456 · ระบบจัดการการจอง</h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <span id="connState" class="rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">เชื่อมต่อแล้ว</span>
-        <button id="logoutBtn" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100">ออกจากระบบ</button>
-      </div>
-    </div>
-  </header>
+<main class="mx-auto max-w-6xl px-4 py-6">
+  <p id="flash" class="mb-4 min-h-5 text-sm" aria-live="polite"></p>
 
-  <main class="mx-auto max-w-6xl px-4 py-6">
-    <p id="flash" class="mb-4 min-h-5 text-sm" aria-live="polite"></p>
+  <!-- Shown until authenticated -->
+  <div id="lockedNotice" class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-400">
+    ใส่รหัสผ่านที่มุมขวาบนเพื่อเริ่มใช้งาน
+  </div>
 
+  <div id="appContent" class="hidden">
     <!-- Summary cards -->
     <div class="mb-6 grid gap-4 sm:grid-cols-3">
       <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
@@ -100,8 +84,8 @@
         <div id="bookingList" class="space-y-4"></div>
       </section>
     </div>
-  </main>
-</div>
+  </div>
+</main>
 
 <!-- Booking dialog -->
 <dialog id="bookingDialog" class="items-center justify-center">
@@ -175,6 +159,9 @@
 (function () {
   "use strict";
 
+  // Only one Worker backs this page — no reason to make anyone type its URL.
+  var API_BASE = "https://deepsleep456-booking-api.yai-taweewoot.workers.dev";
+
   var STATUS_LABEL = { pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", cancelled: "ยกเลิก" };
   var STATUS_BADGE = { pending: "bg-amber-50 text-amber-700", confirmed: "bg-teal-50 text-teal-700", cancelled: "bg-rose-50 text-rose-700" };
   var PAYMENT_LABEL = { unpaid: "ยังไม่ชำระ", deposit: "มัดจำแล้ว", paid_full: "จ่ายครบแล้ว" };
@@ -183,20 +170,19 @@
   var state = {
     month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     bookings: [],
-    api: sessionStorage.getItem("ds_admin_api") || "",
     token: sessionStorage.getItem("ds_admin_token") || "",
   };
 
   var el = {
-    loginGate: document.getElementById("loginGate"),
-    dashboardApp: document.getElementById("dashboardApp"),
-    apiUrl: document.getElementById("apiUrl"),
+    authBar: document.getElementById("authBar"),
+    statusBar: document.getElementById("statusBar"),
     apiToken: document.getElementById("apiToken"),
     loginBtn: document.getElementById("loginBtn"),
-    loginError: document.getElementById("loginError"),
     logoutBtn: document.getElementById("logoutBtn"),
     connState: document.getElementById("connState"),
     flash: document.getElementById("flash"),
+    lockedNotice: document.getElementById("lockedNotice"),
+    appContent: document.getElementById("appContent"),
     calendarGrid: document.getElementById("calendarGrid"),
     monthLabel: document.getElementById("monthLabel"),
     bookingList: document.getElementById("bookingList"),
@@ -219,8 +205,6 @@
     fStatus: document.getElementById("fStatus"),
     fNote: document.getElementById("fNote"),
   };
-  el.apiUrl.value = state.api;
-  el.apiToken.value = state.token;
 
   function pad2(n) { return String(n).padStart(2, "0"); }
   function toDateStr(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
@@ -240,7 +224,7 @@
   function apiRequest(path, options) {
     options = options || {};
     var headers = Object.assign({ Authorization: "Bearer " + state.token, "Content-Type": "application/json" }, options.headers || {});
-    return fetch(state.api.replace(/\/$/, "") + path, Object.assign({}, options, { headers: headers })).then(function (res) {
+    return fetch(API_BASE + path, Object.assign({}, options, { headers: headers })).then(function (res) {
       return res.json().then(function (data) {
         if (!res.ok) throw new Error(data.error || "เรียก API ไม่สำเร็จ");
         return data;
@@ -257,18 +241,15 @@
     return state.bookings.find(function (b) { return b.check_in <= dateStr && b.check_out > dateStr && b.status !== "cancelled"; });
   }
 
-  function showDashboard() {
-    el.loginGate.classList.add("hidden");
-    el.dashboardApp.classList.remove("hidden");
-  }
-  function showLogin(message) {
-    el.dashboardApp.classList.add("hidden");
-    el.loginGate.classList.remove("hidden");
-    el.loginError.textContent = message || "";
+  function setAuthenticatedView(isAuthed) {
+    el.authBar.classList.toggle("hidden", isAuthed);
+    el.statusBar.classList.toggle("hidden", !isAuthed);
+    el.lockedNotice.classList.toggle("hidden", isAuthed);
+    el.appContent.classList.toggle("hidden", !isAuthed);
   }
 
   function refresh() {
-    if (!state.api || !state.token) { showLogin(); return; }
+    if (!state.token) { setAuthenticatedView(false); return; }
     var range = monthRange(state.month);
     var today = toDateStr(new Date());
     Promise.all([
@@ -276,7 +257,7 @@
       apiRequest("/api/dashboard?date=" + today + "&month=" + monthTag(state.month)),
     ]).then(function (results) {
       state.bookings = results[0].bookings || [];
-      showDashboard();
+      setAuthenticatedView(true);
       el.connState.textContent = "เชื่อมต่อแล้ว";
       el.connState.className = "rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700";
       renderCalendar();
@@ -284,10 +265,10 @@
       renderDashboardSummary(results[1]);
       showFlash("อัปเดตข้อมูลล่าสุดแล้ว");
     }).catch(function (err) {
-      sessionStorage.removeItem("ds_admin_api");
       sessionStorage.removeItem("ds_admin_token");
-      state.api = ""; state.token = "";
-      showLogin(err.message);
+      state.token = "";
+      setAuthenticatedView(false);
+      showFlash(err.message, "error");
     });
   }
 
@@ -445,20 +426,21 @@
       .catch(function (err) { el.dialogFlash.textContent = err.message; });
   }
 
-  el.loginBtn.addEventListener("click", function () {
-    state.api = el.apiUrl.value.trim();
-    state.token = el.apiToken.value;
-    if (!state.api || !state.token) { el.loginError.textContent = "กรอก API URL และรหัสผ่านให้ครบ"; return; }
-    sessionStorage.setItem("ds_admin_api", state.api);
-    sessionStorage.setItem("ds_admin_token", state.token);
+  function login() {
+    var token = el.apiToken.value;
+    if (!token) return;
+    state.token = token;
+    sessionStorage.setItem("ds_admin_token", token);
     refresh();
-  });
+  }
+
+  el.loginBtn.addEventListener("click", login);
+  el.apiToken.addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
   el.logoutBtn.addEventListener("click", function () {
-    sessionStorage.removeItem("ds_admin_api");
     sessionStorage.removeItem("ds_admin_token");
-    state.api = ""; state.token = "";
+    state.token = "";
     el.apiToken.value = "";
-    showLogin();
+    setAuthenticatedView(false);
   });
   document.getElementById("prevMonth").addEventListener("click", function () { state.month.setMonth(state.month.getMonth() - 1); refresh(); });
   document.getElementById("nextMonth").addEventListener("click", function () { state.month.setMonth(state.month.getMonth() + 1); refresh(); });
