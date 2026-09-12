@@ -1,9 +1,9 @@
-const JSON_HEADERS = {
-  "content-type": "application/json; charset=utf-8",
-};
+const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
+const PAYMENT_STATUSES = ["unpaid", "deposit", "paid_full"];
+const BOOKING_STATUSES = ["pending", "confirmed", "cancelled"];
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const origin = request.headers.get("Origin");
     const headers = corsHeaders(env, origin);
 
@@ -13,7 +13,7 @@ export default {
 
     try {
       const url = new URL(request.url);
-      const response = await routeRequest(request, env, url, ctx);
+      const response = await routeRequest(request, env, url);
       for (const [key, value] of Object.entries(headers)) {
         response.headers.set(key, value);
       }
@@ -32,142 +32,29 @@ async function routeRequest(request, env, url) {
     return json({ ok: true, service: "deepsleep456-booking-api" });
   }
 
-  if (url.pathname === "/api/availability" && request.method === "GET") {
-    return getAvailability(env, url.searchParams);
-  }
+  await requireAdmin(request, env);
 
-  if (url.pathname === "/api/promotions" && request.method === "GET") {
-    return getPromotions(env);
+  if (url.pathname === "/api/bookings" && request.method === "GET") {
+    return listBookings(env, url.searchParams);
   }
 
   if (url.pathname === "/api/bookings" && request.method === "POST") {
     return createBooking(request, env);
   }
 
-  if (url.pathname === "/api/admin/bookings" && request.method === "GET") {
-    await requireAdmin(request, env);
-    return listBookings(env, url.searchParams);
+  const bookingMatch = url.pathname.match(/^\/api\/bookings\/([^/]+)$/);
+  if (bookingMatch && request.method === "PATCH") {
+    return updateBooking(request, env, bookingMatch[1]);
+  }
+  if (bookingMatch && request.method === "DELETE") {
+    return deleteBooking(env, bookingMatch[1]);
   }
 
-  if (url.pathname === "/api/admin/blocked-dates" && request.method === "GET") {
-    await requireAdmin(request, env);
-    return listBlockedDates(env, url.searchParams);
-  }
-
-  if (url.pathname === "/api/admin/blocked-dates" && request.method === "POST") {
-    await requireAdmin(request, env);
-    return createBlockedDate(request, env);
-  }
-
-  const statusMatch = url.pathname.match(/^\/api\/admin\/bookings\/([^/]+)\/status$/);
-  if (statusMatch && request.method === "PATCH") {
-    await requireAdmin(request, env);
-    return updateBookingStatus(request, env, statusMatch[1]);
-  }
-
-  const blockedDateMatch = url.pathname.match(/^\/api\/admin\/blocked-dates\/(\d{4}-\d{2}-\d{2})$/);
-  if (blockedDateMatch && request.method === "DELETE") {
-    await requireAdmin(request, env);
-    return deleteBlockedDate(env, blockedDateMatch[1]);
+  if (url.pathname === "/api/dashboard" && request.method === "GET") {
+    return getDashboard(env, url.searchParams);
   }
 
   return json({ error: "ไม่พบเส้นทางที่เรียก" }, 404);
-}
-
-async function getAvailability(env, params) {
-  const checkIn = params.get("checkIn");
-  const checkOut = params.get("checkOut");
-  const dates = validateDateRange(checkIn, checkOut);
-
-  const [booked, blocked] = await Promise.all([
-    env.DB.prepare(
-      "SELECT night_date FROM booking_nights WHERE night_date >= ?1 AND night_date < ?2"
-    ).bind(dates.checkIn, dates.checkOut).all(),
-    env.DB.prepare(
-      "SELECT date, reason FROM blocked_dates WHERE date >= ?1 AND date < ?2 ORDER BY date"
-    ).bind(dates.checkIn, dates.checkOut).all(),
-  ]);
-
-  const bookedDates = (booked.results || []).map((row) => row.night_date);
-  const blockedDates = blocked.results || [];
-  return json({
-    available: bookedDates.length === 0 && blockedDates.length === 0,
-    checkIn: dates.checkIn,
-    checkOut: dates.checkOut,
-    bookedDates,
-    blockedDates,
-  });
-}
-
-async function createBooking(request, env) {
-  const body = await readJson(request);
-  const required = ["customerName", "customerPhone", "guests", "checkIn", "checkOut"];
-  if (required.some((field) => body[field] === undefined || body[field] === "")) {
-    return json({ error: "กรุณากรอกข้อมูลการจองให้ครบถ้วน" }, 400);
-  }
-
-  const dates = validateDateRange(body.checkIn, body.checkOut);
-  const guests = Number(body.guests);
-  if (!Number.isInteger(guests) || guests < 1 || guests > 10) {
-    return json({ error: "จำนวนผู้เข้าพักต้องอยู่ระหว่าง 1 ถึง 10 คน" }, 400);
-  }
-
-  const nights = dateRange(dates.checkIn, dates.checkOut);
-  if (nights.length > 30) {
-    return json({ error: "การจองต้องไม่เกิน 30 คืนต่อรายการ" }, 400);
-  }
-
-  const availability = await availabilityForNights(env, nights);
-  if (!availability.available) {
-    return json({
-      error: "ช่วงวันที่เลือกไม่ว่าง",
-      bookedDates: availability.bookedDates,
-      blockedDates: availability.blockedDates,
-    }, 409);
-  }
-
-  const bookingId = crypto.randomUUID();
-  const booking = {
-    id: bookingId,
-    customerName: String(body.customerName).trim().slice(0, 120),
-    customerPhone: String(body.customerPhone).trim().slice(0, 40),
-    customerLineId: body.customerLineId ? String(body.customerLineId).trim().slice(0, 120) : null,
-    guests,
-    checkIn: dates.checkIn,
-    checkOut: dates.checkOut,
-    note: body.note ? String(body.note).trim().slice(0, 1000) : null,
-    totalAmount: Number.isInteger(body.totalAmount) ? body.totalAmount : null,
-  };
-
-  const statements = [
-    env.DB.prepare(
-      `INSERT INTO bookings
-       (id, customer_name, customer_phone, customer_line_id, guests, check_in, check_out, note, total_amount)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`
-    ).bind(
-      booking.id,
-      booking.customerName,
-      booking.customerPhone,
-      booking.customerLineId,
-      booking.guests,
-      booking.checkIn,
-      booking.checkOut,
-      booking.note,
-      booking.totalAmount,
-    ),
-    ...nights.map((night) => env.DB.prepare(
-      "INSERT INTO booking_nights (night_date, booking_id) VALUES (?1, ?2)"
-    ).bind(night, booking.id)),
-  ];
-
-  try {
-    await env.DB.batch(statements);
-  } catch (error) {
-    console.error(JSON.stringify({ event: "booking_insert_failed", bookingId, message: error.message }));
-    return json({ error: "ช่วงเวลานี้เพิ่งถูกจอง กรุณาตรวจสอบวันว่างอีกครั้ง" }, 409);
-  }
-
-  return json({ bookingId, status: "pending", checkIn: booking.checkIn, checkOut: booking.checkOut }, 201);
 }
 
 async function listBookings(env, params) {
@@ -175,8 +62,8 @@ async function listBookings(env, params) {
   const to = params.get("to") || "2999-12-31";
   validateDateRange(from, to);
   const result = await env.DB.prepare(
-    `SELECT id, customer_name, customer_phone, customer_line_id, guests,
-            check_in, check_out, status, note, total_amount, created_at, updated_at
+    `SELECT id, customer_name, customer_phone, customer_email, check_in, check_out,
+            total_amount, payment_status, status, note, created_at, updated_at
      FROM bookings
      WHERE check_in < ?2 AND check_out > ?1
      ORDER BY check_in ASC`
@@ -184,98 +71,198 @@ async function listBookings(env, params) {
   return json({ bookings: result.results || [] });
 }
 
-async function listBlockedDates(env, params) {
-  const from = params.get("from") || "1900-01-01";
-  const to = params.get("to") || "2999-12-31";
-  validateDateRange(from, to);
-  const result = await env.DB.prepare(
-    "SELECT date, reason, created_at FROM blocked_dates WHERE date >= ?1 AND date < ?2 ORDER BY date"
-  ).bind(from, to).all();
-  return json({ blockedDates: result.results || [] });
-}
-
-async function createBlockedDate(request, env) {
+async function createBooking(request, env) {
   const body = await readJson(request);
-  const date = validateDate(body.date);
-  const existingBooking = await env.DB.prepare(
-    "SELECT booking_id FROM booking_nights WHERE night_date = ?1"
-  ).bind(date).first();
-  if (existingBooking) {
-    return json({ error: "วันที่นี้มีรายการจองอยู่แล้ว" }, 409);
+  const required = ["customerName", "customerPhone", "checkIn", "checkOut"];
+  if (required.some((field) => body[field] === undefined || body[field] === "")) {
+    return json({ error: "กรุณากรอกชื่อ เบอร์โทร และวันที่เข้าพักให้ครบถ้วน" }, 400);
   }
+
+  const dates = validateDateRange(body.checkIn, body.checkOut);
+  const nights = dateRange(dates.checkIn, dates.checkOut);
+  if (nights.length > 60) {
+    return json({ error: "การจองต้องไม่เกิน 60 คืนต่อรายการ" }, 400);
+  }
+
+  const conflict = await findConflictingNights(env, nights);
+  if (conflict.length) {
+    return json({ error: "ช่วงวันที่เลือกมีการจองอื่นทับซ้อนอยู่แล้ว", conflictDates: conflict }, 409);
+  }
+
+  const paymentStatus = validatePaymentStatus(body.paymentStatus, "unpaid");
+  const status = BOOKING_STATUSES.includes(body.status) ? body.status : "confirmed";
+  const bookingId = crypto.randomUUID();
+
+  const statements = [
+    env.DB.prepare(
+      `INSERT INTO bookings
+       (id, customer_name, customer_phone, customer_email, check_in, check_out, total_amount, payment_status, status, note)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`
+    ).bind(
+      bookingId,
+      String(body.customerName).trim().slice(0, 120),
+      String(body.customerPhone).trim().slice(0, 40),
+      body.customerEmail ? String(body.customerEmail).trim().slice(0, 160) : null,
+      dates.checkIn,
+      dates.checkOut,
+      Number.isInteger(body.totalAmount) ? body.totalAmount : null,
+      paymentStatus,
+      status,
+      body.note ? String(body.note).trim().slice(0, 1000) : null,
+    ),
+    ...nights.map((night) =>
+      env.DB.prepare("INSERT INTO booking_nights (night_date, booking_id) VALUES (?1, ?2)").bind(night, bookingId)
+    ),
+  ];
 
   try {
-    await env.DB.prepare(
-      "INSERT INTO blocked_dates (date, reason) VALUES (?1, ?2)"
-    ).bind(date, body.reason ? String(body.reason).trim().slice(0, 200) : null).run();
-  } catch {
-    return json({ error: "วันที่นี้ถูกปิดไว้แล้ว" }, 409);
+    await env.DB.batch(statements);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "booking_insert_failed", bookingId, message: error.message }));
+    return json({ error: "ช่วงเวลานี้เพิ่งถูกจองไปพอดี กรุณาตรวจสอบวันว่างอีกครั้ง" }, 409);
   }
-  return json({ date, status: "blocked" }, 201);
+
+  return json({ bookingId, status, checkIn: dates.checkIn, checkOut: dates.checkOut }, 201);
 }
 
-async function deleteBlockedDate(env, date) {
-  validateDate(date);
-  await env.DB.prepare("DELETE FROM blocked_dates WHERE date = ?1").bind(date).run();
-  return json({ date, status: "available" });
-}
-
-async function updateBookingStatus(request, env, bookingId) {
+async function updateBooking(request, env, bookingId) {
   const body = await readJson(request);
-  const status = body.status;
-  if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
-    return json({ error: "สถานะการจองไม่ถูกต้อง" }, 400);
-  }
-
-  const booking = await env.DB.prepare(
-    "SELECT id, status FROM bookings WHERE id = ?1"
-  ).bind(bookingId).first();
-  if (!booking) {
+  const existing = await env.DB.prepare("SELECT * FROM bookings WHERE id = ?1").bind(bookingId).first();
+  if (!existing) {
     return json({ error: "ไม่พบรายการจอง" }, 404);
   }
-  if (booking.status === "cancelled" && status !== "cancelled") {
-    return json({ error: "ไม่สามารถเปิดรายการยกเลิกกลับมาอัตโนมัติได้" }, 409);
+  if (existing.status === "cancelled" && body.status !== "cancelled") {
+    return json({ error: "รายการนี้ถูกยกเลิกแล้ว ไม่สามารถแก้ไขได้" }, 409);
   }
 
+  const dates = validateDateRange(body.checkIn || existing.check_in, body.checkOut || existing.check_out);
+  const datesChanged = dates.checkIn !== existing.check_in || dates.checkOut !== existing.check_out;
+  const status = body.status !== undefined ? body.status : existing.status;
+  if (!BOOKING_STATUSES.includes(status)) {
+    return json({ error: "สถานะการจองไม่ถูกต้อง" }, 400);
+  }
+  const paymentStatus = validatePaymentStatus(body.paymentStatus, existing.payment_status);
+
+  let nights = [];
+  if (status !== "cancelled" && datesChanged) {
+    nights = dateRange(dates.checkIn, dates.checkOut);
+    if (nights.length > 60) {
+      return json({ error: "การจองต้องไม่เกิน 60 คืนต่อรายการ" }, 400);
+    }
+    const conflict = await findConflictingNights(env, nights, bookingId);
+    if (conflict.length) {
+      return json({ error: "ช่วงวันที่ใหม่มีการจองอื่นทับซ้อนอยู่", conflictDates: conflict }, 409);
+    }
+  }
+
+  const statements = [];
   if (status === "cancelled") {
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM booking_nights WHERE booking_id = ?1").bind(bookingId),
-      env.DB.prepare(
-        "UPDATE bookings SET status = ?1, updated_at = datetime('now') WHERE id = ?2"
-      ).bind(status, bookingId),
-    ]);
-  } else {
-    await env.DB.prepare(
-      "UPDATE bookings SET status = ?1, updated_at = datetime('now') WHERE id = ?2"
-    ).bind(status, bookingId).run();
+    statements.push(env.DB.prepare("DELETE FROM booking_nights WHERE booking_id = ?1").bind(bookingId));
+  } else if (datesChanged) {
+    statements.push(env.DB.prepare("DELETE FROM booking_nights WHERE booking_id = ?1").bind(bookingId));
+    for (const night of nights) {
+      statements.push(env.DB.prepare("INSERT INTO booking_nights (night_date, booking_id) VALUES (?1, ?2)").bind(night, bookingId));
+    }
+  }
+
+  statements.push(
+    env.DB.prepare(
+      `UPDATE bookings
+       SET customer_name = ?1, customer_phone = ?2, customer_email = ?3,
+           check_in = ?4, check_out = ?5, total_amount = ?6,
+           payment_status = ?7, status = ?8, note = ?9, updated_at = datetime('now')
+       WHERE id = ?10`
+    ).bind(
+      body.customerName !== undefined ? String(body.customerName).trim().slice(0, 120) : existing.customer_name,
+      body.customerPhone !== undefined ? String(body.customerPhone).trim().slice(0, 40) : existing.customer_phone,
+      body.customerEmail !== undefined
+        ? (body.customerEmail ? String(body.customerEmail).trim().slice(0, 160) : null)
+        : existing.customer_email,
+      status === "cancelled" ? existing.check_in : dates.checkIn,
+      status === "cancelled" ? existing.check_out : dates.checkOut,
+      body.totalAmount !== undefined ? (Number.isInteger(body.totalAmount) ? body.totalAmount : null) : existing.total_amount,
+      paymentStatus,
+      status,
+      body.note !== undefined ? (body.note ? String(body.note).trim().slice(0, 1000) : null) : existing.note,
+      bookingId,
+    )
+  );
+
+  try {
+    await env.DB.batch(statements);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "booking_update_failed", bookingId, message: error.message }));
+    return json({ error: "บันทึกไม่สำเร็จ อาจมีการจองซ้อนทับ" }, 409);
   }
 
   return json({ bookingId, status });
 }
 
-async function getPromotions(env) {
-  const result = await env.DB.prepare(
-    `SELECT id, name, description, discount_type, discount_value, min_nights, starts_on, ends_on
-     FROM promotions
-     WHERE active = 1
-       AND (starts_on IS NULL OR starts_on <= date('now'))
-       AND (ends_on IS NULL OR ends_on >= date('now'))
-     ORDER BY min_nights ASC, discount_value DESC`
-  ).all();
-  return json({ promotions: result.results || [] });
+async function deleteBooking(env, bookingId) {
+  const existing = await env.DB.prepare("SELECT id FROM bookings WHERE id = ?1").bind(bookingId).first();
+  if (!existing) {
+    return json({ error: "ไม่พบรายการจอง" }, 404);
+  }
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM booking_nights WHERE booking_id = ?1").bind(bookingId),
+    env.DB.prepare("DELETE FROM bookings WHERE id = ?1").bind(bookingId),
+  ]);
+  return json({ bookingId, status: "deleted" });
 }
 
-async function availabilityForNights(env, nights) {
-  const placeholders = nights.map(() => "?").join(",");
-  const [booked, blocked] = await Promise.all([
-    env.DB.prepare(`SELECT night_date FROM booking_nights WHERE night_date IN (${placeholders})`).bind(...nights).all(),
-    env.DB.prepare(`SELECT date, reason FROM blocked_dates WHERE date IN (${placeholders})`).bind(...nights).all(),
+async function getDashboard(env, params) {
+  const today = params.get("date") || new Date().toISOString().slice(0, 10);
+  validateDate(today);
+  const month = params.get("month") || today.slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    throw new HttpError("รูปแบบเดือนต้องเป็น YYYY-MM", 400);
+  }
+  const [year, monthNumber] = month.split("-").map(Number);
+  const monthStart = `${month}-01`;
+  const nextMonthStart = monthNumber === 12
+    ? `${year + 1}-01-01`
+    : `${year}-${String(monthNumber + 1).padStart(2, "0")}-01`;
+
+  const [checkIns, checkOuts, revenueRows] = await Promise.all([
+    env.DB.prepare(
+      `SELECT id, customer_name, customer_phone, check_in, check_out, status
+       FROM bookings WHERE check_in = ?1 AND status != 'cancelled' ORDER BY customer_name`
+    ).bind(today).all(),
+    env.DB.prepare(
+      `SELECT id, customer_name, customer_phone, check_in, check_out, status
+       FROM bookings WHERE check_out = ?1 AND status != 'cancelled' ORDER BY customer_name`
+    ).bind(today).all(),
+    env.DB.prepare(
+      `SELECT total_amount, payment_status FROM bookings
+       WHERE check_in >= ?1 AND check_in < ?2 AND status != 'cancelled'`
+    ).bind(monthStart, nextMonthStart).all(),
   ]);
-  return {
-    available: booked.results.length === 0 && blocked.results.length === 0,
-    bookedDates: booked.results.map((row) => row.night_date),
-    blockedDates: blocked.results,
-  };
+
+  const rows = revenueRows.results || [];
+  const sumWhere = (predicate) => rows.filter(predicate).reduce((sum, row) => sum + (row.total_amount || 0), 0);
+  return json({
+    date: today,
+    month,
+    checkIns: checkIns.results || [],
+    checkOuts: checkOuts.results || [],
+    revenue: {
+      totalAmount: sumWhere(() => true),
+      paidFullAmount: sumWhere((row) => row.payment_status === "paid_full"),
+      depositAmount: sumWhere((row) => row.payment_status === "deposit"),
+      unpaidAmount: sumWhere((row) => row.payment_status === "unpaid"),
+      bookingsCount: rows.length,
+    },
+  });
+}
+
+async function findConflictingNights(env, nights, excludeBookingId) {
+  const placeholders = nights.map(() => "?").join(",");
+  const query = excludeBookingId
+    ? env.DB.prepare(`SELECT night_date FROM booking_nights WHERE night_date IN (${placeholders}) AND booking_id != ?`)
+        .bind(...nights, excludeBookingId)
+    : env.DB.prepare(`SELECT night_date FROM booking_nights WHERE night_date IN (${placeholders})`).bind(...nights);
+  const result = await query.all();
+  return (result.results || []).map((row) => row.night_date);
 }
 
 function validateDateRange(checkIn, checkOut) {
@@ -285,7 +272,7 @@ function validateDateRange(checkIn, checkOut) {
   const start = Date.parse(`${checkIn}T00:00:00Z`);
   const end = Date.parse(`${checkOut}T00:00:00Z`);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
-    throw new HttpError("วันเช็กเอาต์ต้องอยู่หลังวันเช็กอิน", 400);
+    throw new HttpError("วันเช็คเอาต์ต้องอยู่หลังวันเช็คอิน", 400);
   }
   return { checkIn, checkOut };
 }
@@ -294,9 +281,13 @@ function validateDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) {
     throw new HttpError("รูปแบบวันที่ต้องเป็น YYYY-MM-DD", 400);
   }
-  const parsed = new Date(`${value}T00:00:00Z`);
-  if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
-    throw new HttpError("วันที่ไม่ถูกต้อง", 400);
+  return value;
+}
+
+function validatePaymentStatus(value, fallback) {
+  if (value === undefined) return fallback;
+  if (!PAYMENT_STATUSES.includes(value)) {
+    throw new HttpError("สถานะการชำระเงินไม่ถูกต้อง", 400);
   }
   return value;
 }
@@ -357,10 +348,7 @@ function corsHeaders(env, origin) {
 }
 
 function json(payload, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { ...JSON_HEADERS, ...extraHeaders },
-  });
+  return new Response(JSON.stringify(payload), { status, headers: { ...JSON_HEADERS, ...extraHeaders } });
 }
 
 class HttpError extends Error {

@@ -1,24 +1,26 @@
 # Deepsleep456 Booking API
 
-Cloudflare Worker API and D1 schema for the single-house booking system.
+Cloudflare Worker + D1 backend for managing bookings of a single daily-rental
+house. This is a private back-office tool for the owner/staff — every route
+except `/api/health` requires the admin bearer token, there is no public
+customer-facing booking flow.
 
 ## Local setup
 
 1. Install Wrangler and authenticate with Cloudflare.
-2. Replace `REPLACE_WITH_D1_DATABASE_ID` in `wrangler.jsonc` after creating the D1 database.
-3. Apply the migration locally:
+2. Apply the migration locally:
 
 ```bash
 npx wrangler d1 migrations apply deepsleep456-bookings --local
 ```
 
-4. Set the admin token as a secret:
+3. Set the admin token for local dev in a `.dev.vars` file (git-ignored):
 
-```bash
-npx wrangler secret put ADMIN_TOKEN
+```
+ADMIN_TOKEN=some-local-token
 ```
 
-5. Start the Worker:
+4. Start the Worker:
 
 ```bash
 npx wrangler dev
@@ -28,23 +30,44 @@ npx wrangler dev
 
 ```bash
 npx wrangler d1 migrations apply deepsleep456-bookings --remote
+npx wrangler secret put ADMIN_TOKEN
 npx wrangler deploy
 ```
 
+## Data model
+
+- `bookings` — one row per booking: customer name/phone/email, check-in/out
+  dates, total amount, `payment_status` (`unpaid` | `deposit` | `paid_full`),
+  `status` (`pending` | `confirmed` | `cancelled`), note.
+- `booking_nights` — one row per reserved night (`night_date TEXT PRIMARY KEY`
+  referencing `bookings.id`). Its primary key is what prevents double-booking:
+  two requests racing for the same night can't both insert the same
+  `night_date`, so conflict checking is safe even under concurrent requests.
+  Cancelling or deleting a booking, or rescheduling it to different dates,
+  releases its nights.
+
 ## API
 
+All routes below (except `/api/health`) require `Authorization: Bearer <ADMIN_TOKEN>`.
+
 - `GET /api/health`
-- `GET /api/availability?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD`
-- `GET /api/promotions`
-- `POST /api/bookings`
-- `GET /api/admin/bookings?from=YYYY-MM-DD&to=YYYY-MM-DD` with `Authorization: Bearer <ADMIN_TOKEN>`
-- `PATCH /api/admin/bookings/:id/status` with `{ "status": "confirmed" | "pending" | "cancelled" }`
-- `GET /api/admin/blocked-dates?from=YYYY-MM-DD&to=YYYY-MM-DD` with `Authorization: Bearer <ADMIN_TOKEN>`
-- `POST /api/admin/blocked-dates` with `{ "date": "YYYY-MM-DD", "reason": "maintenance" }`
-- `DELETE /api/admin/blocked-dates/YYYY-MM-DD`
+- `GET /api/bookings?from=YYYY-MM-DD&to=YYYY-MM-DD` — bookings overlapping the range (for the calendar view)
+- `POST /api/bookings` — create a manual booking:
+  `{ customerName, customerPhone, customerEmail?, checkIn, checkOut, totalAmount?, paymentStatus?, status?, note? }`
+  Returns `409` with `conflictDates` if any night in the range is already booked.
+- `PATCH /api/bookings/:id` — edit any subset of the same fields. Changing
+  `checkIn`/`checkOut` reschedules the booking (re-checked for conflicts,
+  excluding its own current nights). Setting `status: "cancelled"` releases
+  its nights. Cancelled bookings can't be edited further except to reopen
+  is not supported — create a new booking instead.
+- `DELETE /api/bookings/:id` — permanently delete a booking and release its nights.
+- `GET /api/dashboard?date=YYYY-MM-DD&month=YYYY-MM` — today's check-ins/check-outs
+  (defaults to the current date) and a rough revenue summary for the given
+  month (defaults to the month of `date`), broken down by payment status.
 
-Booking requests reserve each night in `booking_nights`. Its primary key prevents two requests from reserving the same night, including concurrent requests. Cancelling a booking releases those nights.
+`paymentStatus` is one of `unpaid` | `deposit` | `paid_full`.
+`status` is one of `pending` | `confirmed` | `cancelled`.
 
-The public site should call the deployed Worker through an API URL configured in its frontend. Do not put `ADMIN_TOKEN` in the public website.
-
-The admin UI is available at `/admin/` (with `/booking-admin/` retained as the implementation route).
+The admin UI lives at `/admin/` as a static page that stores the Worker's
+URL and the admin token in `sessionStorage` and calls this API directly from
+the browser. Do not put `ADMIN_TOKEN` anywhere in the public website code.
