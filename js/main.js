@@ -261,6 +261,51 @@
     }
   }
 
+  // Date fields that always show DD/MM/YYYY regardless of the visitor's OS
+  // locale — native <input type="date"> renders in whatever format the OS
+  // uses (the `lang` attribute does not override it), so each field pairs a
+  // plain text input (the source of truth for display) with a hidden native
+  // date input used only as a calendar-picker trigger, and a hidden
+  // ISO-value input that's what actually gets submitted.
+  function isoToDmy(iso) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    return match ? match[3] + "/" + match[2] + "/" + match[1] : "";
+  }
+  function dmyToIso(dmy) {
+    var match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((dmy || "").trim());
+    if (!match) return null;
+    var d = match[1].padStart(2, "0"), m = match[2].padStart(2, "0"), y = match[3];
+    var parsed = new Date(y + "-" + m + "-" + d + "T00:00:00");
+    if (parsed.getFullYear() !== Number(y) || parsed.getMonth() + 1 !== Number(m) || parsed.getDate() !== Number(d)) return null;
+    return y + "-" + m + "-" + d;
+  }
+  document.querySelectorAll("[data-date-field]").forEach(function (field) {
+    var text = field.querySelector("[data-date-text]");
+    var native = field.querySelector("[data-date-native]");
+    var picker = field.querySelector("[data-date-picker]");
+    var iso = field.parentElement.querySelector("[data-date-iso]");
+    if (!text || !native || !iso) return;
+
+    text.addEventListener("input", function () {
+      var value = dmyToIso(text.value);
+      if (value) {
+        iso.value = value;
+        native.value = value;
+      } else {
+        iso.value = "";
+      }
+    });
+    native.addEventListener("change", function () {
+      text.value = isoToDmy(native.value);
+      iso.value = native.value;
+    });
+    if (picker) {
+      picker.addEventListener("click", function () {
+        if (native.showPicker) native.showPicker();
+      });
+    }
+  });
+
   // Booking request modal — posts to the deepsleep456-admin Worker's public
   // API (same-origin at /admin/api/booking-requests), landing as a pending
   // row an admin approves or rejects from the back office.

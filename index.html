@@ -530,6 +530,14 @@ button { font-family: inherit; }
   border: 1px solid rgba(63,91,68,.25); border-radius: 8px; padding: 10px 12px; font: inherit; color: var(--color-charcoal);
 }
 .request-modal__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.date-field { position: relative; }
+.date-field input[data-date-text] { width: 100%; padding-right: 34px; }
+.date-field__picker {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: 0;
+  padding: 2px; cursor: pointer; color: #8a8570; display: flex;
+}
+.date-field__picker:hover { color: var(--color-forest-dark); }
+.date-field__native { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
 .request-modal__status { font-size: .88rem; margin: 4px 0 12px; min-height: 20px; }
 .request-modal__status--error { color: #b3261e; }
 .request-modal__status--ok { color: var(--color-forest-dark); }
@@ -1269,11 +1277,25 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
       <div class="request-modal__row">
         <div class="request-modal__field">
           <label for="req-checkin">เช็คอิน</label>
-          <input type="date" id="req-checkin" name="checkIn" required>
+          <div class="date-field" data-date-field>
+            <input type="text" id="req-checkin" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off" data-date-text required>
+            <button type="button" class="date-field__picker" data-date-picker aria-label="เลือกวันที่จากปฏิทิน">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            </button>
+            <input type="date" class="date-field__native" data-date-native tabindex="-1" aria-hidden="true">
+          </div>
+          <input type="hidden" name="checkIn" data-date-iso>
         </div>
         <div class="request-modal__field">
           <label for="req-checkout">เช็คเอาท์</label>
-          <input type="date" id="req-checkout" name="checkOut" required>
+          <div class="date-field" data-date-field>
+            <input type="text" id="req-checkout" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off" data-date-text required>
+            <button type="button" class="date-field__picker" data-date-picker aria-label="เลือกวันที่จากปฏิทิน">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            </button>
+            <input type="date" class="date-field__native" data-date-native tabindex="-1" aria-hidden="true">
+          </div>
+          <input type="hidden" name="checkOut" data-date-iso>
         </div>
       </div>
       <div class="request-modal__field">
