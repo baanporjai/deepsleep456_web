@@ -260,4 +260,79 @@
       }
     }
   }
+
+  // Booking request modal — posts to the deepsleep456-admin Worker's public
+  // API (same-origin at /admin/api/booking-requests), landing as a pending
+  // row an admin approves or rejects from the back office.
+  var requestModal = document.querySelector("[data-request-modal]");
+  var requestOpenBtns = document.querySelectorAll("[data-request-open]");
+  var requestCloseBtn = document.querySelector("[data-request-close]");
+  var requestForm = document.querySelector("[data-request-form]");
+  var requestStatus = document.querySelector("[data-request-status]");
+  var requestSubmitBtn = document.querySelector("[data-request-submit]");
+
+  function openRequestModal() {
+    if (!requestModal) return;
+    requestModal.setAttribute("data-open", "true");
+    requestModal.setAttribute("aria-hidden", "false");
+  }
+  function closeRequestModal() {
+    if (!requestModal) return;
+    requestModal.setAttribute("data-open", "false");
+    requestModal.setAttribute("aria-hidden", "true");
+  }
+
+  requestOpenBtns.forEach(function (btn) {
+    btn.addEventListener("click", openRequestModal);
+  });
+  if (requestCloseBtn) requestCloseBtn.addEventListener("click", closeRequestModal);
+  if (requestModal) {
+    requestModal.addEventListener("click", function (e) {
+      if (e.target === requestModal) closeRequestModal();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && requestModal && requestModal.getAttribute("data-open") === "true") closeRequestModal();
+  });
+
+  if (requestForm) {
+    requestForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var formData = new FormData(requestForm);
+      var payload = {
+        customerName: formData.get("customerName"),
+        customerPhone: formData.get("customerPhone"),
+        customerEmail: formData.get("customerEmail") || null,
+        checkIn: formData.get("checkIn"),
+        checkOut: formData.get("checkOut"),
+        note: formData.get("note") || null,
+      };
+      requestStatus.textContent = "กำลังส่งคำขอ...";
+      requestStatus.className = "request-modal__status";
+      requestSubmitBtn.disabled = true;
+      fetch("/admin/api/booking-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then(function (res) {
+          return res.json().then(function (data) {
+            if (!res.ok) throw new Error(data.error || "ส่งคำขอไม่สำเร็จ");
+            return data;
+          });
+        })
+        .then(function () {
+          requestStatus.textContent = "ส่งคำขอสำเร็จ! ทีมงานจะติดต่อกลับเพื่อยืนยันเร็วๆ นี้";
+          requestStatus.className = "request-modal__status request-modal__status--ok";
+          requestForm.reset();
+        })
+        .catch(function (err) {
+          requestStatus.textContent = err.message;
+          requestStatus.className = "request-modal__status request-modal__status--error";
+        })
+        .finally(function () {
+          requestSubmitBtn.disabled = false;
+        });
+    });
+  }
 })();
