@@ -136,10 +136,10 @@ button { font-family: inherit; }
 .btn--lg { padding: 16px 32px; font-size: 1.05rem; }
 
 /* on light backgrounds, outline needs dark variant */
-.booking-cta .btn--outline, .footer .btn--outline {
+.booking-cta .btn--outline, .footer .btn--outline, .quick-booking .btn--outline {
   border-color: var(--color-forest); color: var(--color-forest);
 }
-.booking-cta .btn--outline:hover { background: var(--color-forest); color: #fff; }
+.booking-cta .btn--outline:hover, .quick-booking .btn--outline:hover { background: var(--color-forest); color: #fff; }
 
 /* Header */
 .site-header {
@@ -212,6 +212,37 @@ button { font-family: inherit; }
 .booking-cta__facts strong { color: var(--color-forest-dark); }
 .booking-cta__note { font-size: .88rem; color: #6b6553; }
 .booking-cta__actions { display: flex; flex-wrap: wrap; gap: 14px; }
+
+/* Quick booking widget: dates -> nights summary -> "Book now" -> contact form ->
+   success. Posts to the back office's public booking-requests API. */
+.quick-booking { padding-top: 52px; padding-bottom: 0; }
+.quick-booking__card {
+  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-card);
+  padding: 36px 40px; max-width: 640px; margin: 0 auto; text-align: center;
+}
+.quick-booking__header { margin-bottom: 22px; }
+.quick-booking__header .section__title { margin-bottom: 0; }
+.quick-booking__dates { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-bottom: 16px; }
+.quick-booking__field { display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: .88rem; font-weight: 500; color: var(--color-forest-dark); min-width: 190px; flex: 1; }
+.quick-booking__field input {
+  font-family: inherit; font-size: 1rem; padding: 12px 14px; border-radius: 10px;
+  border: 1.5px solid rgba(63,91,68,.25); color: var(--color-charcoal); background: var(--color-sand);
+}
+.quick-booking__field input:focus { outline: none; border-color: var(--color-forest); background: #fff; }
+.quick-booking__summary { font-weight: 600; color: var(--color-forest-dark); margin: 0 0 20px; min-height: 1.4em; }
+.quick-booking__next { width: 100%; max-width: 300px; margin: 0 auto; }
+.quick-booking__back { background: none; border: none; color: var(--color-clay-text); font-weight: 500; cursor: pointer; padding: 0; margin: 0 0 14px; font-size: .9rem; }
+.quick-booking__recap { font-weight: 600; color: var(--color-forest-dark); margin: 0 0 18px; }
+.quick-booking__fields { display: grid; gap: 14px; margin-bottom: 18px; text-align: left; }
+.quick-booking__error { color: #B3261E; font-size: .88rem; margin: 0 0 14px; }
+.quick-booking__step--success { padding: 20px 0; }
+.quick-booking__success-icon { font-size: 2.4rem; margin: 0 0 10px; }
+.quick-booking__success-text { color: var(--color-forest-dark); font-weight: 500; margin: 0 0 18px; }
+
+@media (max-width: 560px) {
+  .quick-booking__card { padding: 26px 20px; }
+  .quick-booking__dates { flex-direction: column; }
+}
 
 /* Gallery */
 .gallery__filters { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }

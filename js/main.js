@@ -380,4 +380,140 @@
         });
     });
   }
+
+  // Quick booking widget: pick dates, see the nights summary, "Book now" reveals
+  // a contact step, submit posts to the same public booking-requests API as the
+  // modal above (/admin/api/booking-requests — deepsleep456-admin/src/app/api/
+  // booking-requests/route.ts). This only files a request; staff still review/
+  // approve it into a real booking from the "คำขอจองจากเว็บ" queue.
+  var qbDatesStep = document.querySelector("[data-qb-step='dates']");
+  if (qbDatesStep) {
+    var qbLang = document.documentElement.lang === "en" ? "en" : "th";
+    var qbCheckin = document.querySelector("[data-qb-checkin]");
+    var qbCheckout = document.querySelector("[data-qb-checkout]");
+    var qbSummary = document.querySelector("[data-qb-summary]");
+    var qbNext = document.querySelector("[data-qb-next]");
+    var qbContactStep = document.querySelector("[data-qb-step='contact']");
+    var qbSuccessStep = document.querySelector("[data-qb-step='success']");
+    var qbBack = document.querySelector("[data-qb-back]");
+    var qbRecap = document.querySelector("[data-qb-recap]");
+    var qbError = document.querySelector("[data-qb-error]");
+    var qbReset = document.querySelector("[data-qb-reset]");
+    var qbSubmitBtn = document.querySelector("[data-qb-submit]");
+
+    var qbCopy = {
+      th: {
+        pickDates: "เลือกวันที่เพื่อดูจำนวนคืน",
+        nights: function (n) { return n + " คืน"; },
+        invalid: "วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน",
+        recap: function (ci, co, n) { return ci + " ถึง " + co + " (" + n + " คืน)"; },
+        sending: "กำลังส่ง...",
+        submit: "ส่งคำขอจอง",
+        genericError: "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่ หรือจองผ่าน LINE/โทรแทน"
+      },
+      en: {
+        pickDates: "Pick your dates to see the number of nights",
+        nights: function (n) { return n + (n === 1 ? " night" : " nights"); },
+        invalid: "Check-out must be after check-in",
+        recap: function (ci, co, n) { return ci + " to " + co + " (" + n + (n === 1 ? " night" : " nights") + ")"; },
+        sending: "Sending...",
+        submit: "Send booking request",
+        genericError: "Couldn't send your request — please try again, or book via LINE/phone instead."
+      }
+    }[qbLang];
+
+    var qbPad = function (n) { return n < 10 ? "0" + n : String(n); };
+    var qbDateStr = function (d) { return d.getFullYear() + "-" + qbPad(d.getMonth() + 1) + "-" + qbPad(d.getDate()); };
+    var qbAddDays = function (dateStr, days) {
+      var d = new Date(dateStr + "T00:00:00");
+      d.setDate(d.getDate() + days);
+      return qbDateStr(d);
+    };
+    var qbNightsBetween = function (ci, co) {
+      var a = new Date(ci + "T00:00:00");
+      var b = new Date(co + "T00:00:00");
+      return Math.round((b - a) / 86400000);
+    };
+    var qbFormatDisplay = function (dateStr) {
+      var d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString(qbLang === "th" ? "th-TH" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+    };
+
+    qbCheckin.min = qbDateStr(new Date());
+
+    function qbUpdateSummary() {
+      var ci = qbCheckin.value, co = qbCheckout.value;
+      if (ci) qbCheckout.min = qbAddDays(ci, 1);
+      if (!ci || !co) {
+        qbSummary.textContent = qbCopy.pickDates;
+        qbNext.disabled = true;
+        return;
+      }
+      var n = qbNightsBetween(ci, co);
+      if (n <= 0) {
+        qbSummary.textContent = qbCopy.invalid;
+        qbNext.disabled = true;
+        return;
+      }
+      qbSummary.textContent = qbCopy.nights(n);
+      qbNext.disabled = false;
+    }
+    qbCheckin.addEventListener("change", qbUpdateSummary);
+    qbCheckout.addEventListener("change", qbUpdateSummary);
+
+    qbNext.addEventListener("click", function () {
+      if (qbNext.disabled) return;
+      var ci = qbCheckin.value, co = qbCheckout.value;
+      var n = qbNightsBetween(ci, co);
+      qbRecap.textContent = qbCopy.recap(qbFormatDisplay(ci), qbFormatDisplay(co), n);
+      qbDatesStep.hidden = true;
+      qbContactStep.hidden = false;
+    });
+
+    qbBack.addEventListener("click", function () {
+      qbContactStep.hidden = true;
+      qbDatesStep.hidden = false;
+    });
+
+    qbContactStep.addEventListener("submit", function (e) {
+      e.preventDefault();
+      qbError.hidden = true;
+      var fd = new FormData(qbContactStep);
+      var payload = {
+        customerName: fd.get("customerName"),
+        customerPhone: fd.get("customerPhone"),
+        customerEmail: fd.get("customerEmail") || null,
+        checkIn: qbCheckin.value,
+        checkOut: qbCheckout.value
+      };
+      qbSubmitBtn.disabled = true;
+      qbSubmitBtn.textContent = qbCopy.sending;
+      fetch("/admin/api/booking-requests", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(function (res) {
+        if (!res.ok) return res.json().then(function (data) { throw new Error(data && data.error); });
+        return res.json();
+      }).then(function () {
+        qbContactStep.hidden = true;
+        qbSuccessStep.hidden = false;
+      }).catch(function (err) {
+        qbError.textContent = (err && err.message) ? err.message : qbCopy.genericError;
+        qbError.hidden = false;
+      }).finally(function () {
+        qbSubmitBtn.disabled = false;
+        qbSubmitBtn.textContent = qbCopy.submit;
+      });
+    });
+
+    qbReset.addEventListener("click", function () {
+      qbContactStep.reset();
+      qbSuccessStep.hidden = true;
+      qbDatesStep.hidden = false;
+      qbCheckin.value = "";
+      qbCheckout.value = "";
+      qbUpdateSummary();
+    });
+  }
 })();

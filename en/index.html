@@ -158,6 +158,59 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
     </div>
   </section>
 
+  <section class="section quick-booking" id="quick-booking" aria-labelledby="quick-booking-title">
+    <div class="container">
+      <div class="quick-booking__card">
+        <div class="quick-booking__header">
+          <p class="eyebrow">Book your stay</p>
+          <h2 class="section__title" id="quick-booking-title">Choose your dates</h2>
+        </div>
+
+        <div data-qb-step="dates">
+          <div class="quick-booking__dates">
+            <label class="quick-booking__field">
+              <span>Check-in</span>
+              <input type="date" data-qb-checkin required>
+            </label>
+            <label class="quick-booking__field">
+              <span>Check-out</span>
+              <input type="date" data-qb-checkout required>
+            </label>
+          </div>
+          <p class="quick-booking__summary" data-qb-summary>Pick your dates to see the number of nights</p>
+          <button type="button" class="btn btn--line btn--lg quick-booking__next" data-qb-next disabled>Book now</button>
+        </div>
+
+        <form class="quick-booking__step--contact" data-qb-step="contact" hidden>
+          <button type="button" class="quick-booking__back" data-qb-back>← Change dates</button>
+          <p class="quick-booking__recap" data-qb-recap></p>
+          <div class="quick-booking__fields">
+            <label class="quick-booking__field">
+              <span>Full name</span>
+              <input type="text" name="customerName" required autocomplete="name">
+            </label>
+            <label class="quick-booking__field">
+              <span>Phone</span>
+              <input type="tel" name="customerPhone" required autocomplete="tel">
+            </label>
+            <label class="quick-booking__field">
+              <span>Email (optional)</span>
+              <input type="email" name="customerEmail" autocomplete="email">
+            </label>
+          </div>
+          <p class="quick-booking__error" data-qb-error hidden></p>
+          <button type="submit" class="btn btn--line btn--lg" data-qb-submit>Send booking request</button>
+        </form>
+
+        <div class="quick-booking__step--success" data-qb-step="success" hidden>
+          <p class="quick-booking__success-icon" aria-hidden="true">✅</p>
+          <p class="quick-booking__success-text">Request sent! Our team will contact you shortly to confirm.</p>
+          <button type="button" class="btn btn--outline" data-qb-reset>Book again</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="section gallery" id="gallery" aria-labelledby="gallery-title">
     <div class="container">
       <div class="section__header">
