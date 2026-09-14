@@ -423,8 +423,12 @@
       th: {
         pickDates: "เลือกวันที่เพื่อดูจำนวนคืน",
         nights: function (n) { return n + " คืน"; },
+        priced: function (n, total) { return n + " คืน · รวม " + qbMoney(total); },
         invalid: "วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน",
-        recap: function (ci, co, n) { return ci + " ถึง " + co + " (" + n + " คืน)"; },
+        recap: function (ci, co, n, total) {
+          var base = ci + " ถึง " + co + " (" + n + " คืน)";
+          return total != null ? base + " · รวม " + qbMoney(total) : base;
+        },
         sending: "กำลังส่ง...",
         submit: "ส่งคำขอจอง",
         genericError: "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่ หรือจองผ่าน LINE/โทรแทน",
@@ -433,14 +437,27 @@
       en: {
         pickDates: "Pick your dates to see the number of nights",
         nights: function (n) { return n + (n === 1 ? " night" : " nights"); },
+        priced: function (n, total) { return n + (n === 1 ? " night" : " nights") + " · Total " + qbMoney(total); },
         invalid: "Check-out must be after check-in",
-        recap: function (ci, co, n) { return ci + " to " + co + " (" + n + (n === 1 ? " night" : " nights") + ")"; },
+        recap: function (ci, co, n, total) {
+          var base = ci + " to " + co + " (" + n + (n === 1 ? " night" : " nights") + ")";
+          return total != null ? base + " · Total " + qbMoney(total) : base;
+        },
         sending: "Sending...",
         submit: "Send booking request",
         genericError: "Couldn't send your request — please try again, or book via LINE/phone instead.",
         loginError: "LINE login failed — please try again."
       }
     }[qbLang];
+
+    // Estimated price for the picked dates — same calculation as the admin
+    // calendar, via the public /admin/api/pricing-quote endpoint (deepsleep456-
+    // admin/src/app/api/pricing-quote/route.ts). Best-effort: if the fetch is
+    // slow or fails, the nights-only summary just stays as is — price is a
+    // nice-to-have and must never block the booking flow.
+    var qbMoney = function (n) {
+      return qbLang === "th" ? n.toLocaleString("th-TH") + " บาท" : n.toLocaleString("en-US") + " THB";
+    };
 
     var qbPad = function (n) { return n < 10 ? "0" + n : String(n); };
     var qbDateStr = function (d) { return d.getFullYear() + "-" + qbPad(d.getMonth() + 1) + "-" + qbPad(d.getDate()); };
@@ -461,6 +478,22 @@
 
     qbCheckin.min = qbDateStr(new Date());
 
+    var qbLastQuote = null; // { checkIn, checkOut, total } — lets qbCurrentRecap reuse the fetched price without another round trip
+    var qbQuoteToken = 0;
+
+    function qbFetchQuote(ci, co, n) {
+      var token = ++qbQuoteToken;
+      fetch("/admin/api/pricing-quote?checkIn=" + ci + "&checkOut=" + co)
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (!data || token !== qbQuoteToken) return; // stale response from an earlier date change
+          if (qbCheckin.value !== ci || qbCheckout.value !== co) return; // dates changed again while this was in flight
+          qbLastQuote = { checkIn: ci, checkOut: co, total: data.total };
+          qbSummary.textContent = qbCopy.priced(n, data.total);
+        })
+        .catch(function () {});
+    }
+
     function qbUpdateSummary() {
       var ci = qbCheckin.value, co = qbCheckout.value;
       if (ci) qbCheckout.min = qbAddDays(ci, 1);
@@ -477,6 +510,7 @@
       }
       qbSummary.textContent = qbCopy.nights(n);
       qbNext.disabled = false;
+      qbFetchQuote(ci, co, n);
     }
     qbCheckin.addEventListener("change", qbUpdateSummary);
     qbCheckout.addEventListener("change", qbUpdateSummary);
@@ -484,7 +518,8 @@
     function qbCurrentRecap() {
       var ci = qbCheckin.value, co = qbCheckout.value;
       var n = qbNightsBetween(ci, co);
-      return qbCopy.recap(qbFormatDisplay(ci), qbFormatDisplay(co), n);
+      var total = (qbLastQuote && qbLastQuote.checkIn === ci && qbLastQuote.checkOut === co) ? qbLastQuote.total : null;
+      return qbCopy.recap(qbFormatDisplay(ci), qbFormatDisplay(co), n, total);
     }
 
     function qbShowAmenities(recapText) {
