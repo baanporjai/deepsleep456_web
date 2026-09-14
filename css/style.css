@@ -245,6 +245,8 @@ button { font-family: inherit; }
 .quick-booking__amenities-caveat { font-size: .8rem; color: #6b6553; font-style: italic; margin: 0 0 20px; }
 .quick-booking__fields { display: grid; gap: 14px; margin-bottom: 18px; text-align: left; }
 .quick-booking__error { color: #B3261E; font-size: .88rem; margin: 0 0 14px; }
+.quick-booking__step--login .btn { width: 100%; max-width: 300px; margin: 0 auto; }
+.quick-booking__line-note { color: var(--color-clay-text); font-size: .85rem; margin: 0 0 16px; }
 .quick-booking__step--success { padding: 20px 0; }
 .quick-booking__success-icon { font-size: 2.4rem; margin: 0 0 10px; }
 .quick-booking__success-text { color: var(--color-forest-dark); font-weight: 500; margin: 0 0 18px; }

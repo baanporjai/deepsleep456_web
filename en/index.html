@@ -21,7 +21,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../images/logo.webp?v=20260707" type="image/webp">
-<link rel="stylesheet" href="../css/style.css?v=20260707h">
+<link rel="stylesheet" href="../css/style.css?v=20260909">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -158,7 +158,7 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
     </div>
   </section>
 
-  <section class="section quick-booking" id="quick-booking" aria-labelledby="quick-booking-title">
+  <section class="section quick-booking" id="quick-booking" aria-labelledby="quick-booking-title" data-liff-id="2011500625-JoyAghge">
     <div class="container">
       <div class="quick-booking__card">
         <div class="quick-booking__header">
@@ -179,6 +179,17 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
             <button type="button" class="btn btn--line btn--lg quick-booking__next" data-qb-next disabled>Book now</button>
           </div>
           <p class="quick-booking__summary" data-qb-summary>Pick your dates to see the number of nights</p>
+        </div>
+
+        <div class="quick-booking__step--login" data-qb-step="line-login" hidden>
+          <button type="button" class="quick-booking__back" data-qb-login-back>← Change dates</button>
+          <p class="quick-booking__recap" data-qb-login-recap></p>
+          <p class="quick-booking__line-note">Log in with LINE so our team can reply to you directly in LINE chat.</p>
+          <button type="button" class="btn btn--line btn--lg" data-qb-line-login>
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 2.98 1.79 5.6 4.5 7.14-.15.57-.96 3.6-1 3.83 0 0-.02.17.09.24.11.07.24.02.24.02.32-.05 3.7-2.44 4.3-2.86.6.09 1.22.13 1.87.13 5.52 0 10-3.86 10-8.6S17.52 2 12 2Z"/></svg>
+            Log in with LINE
+          </button>
+          <p class="quick-booking__error" data-qb-login-error hidden></p>
         </div>
 
         <form class="quick-booking__step--amenities" data-qb-step="amenities" hidden>
@@ -698,6 +709,7 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
   </a>
 </div>
 
-<script src="../js/main.js?v=20260908"></script>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="../js/main.js?v=20260909"></script>
 </body>
 </html>

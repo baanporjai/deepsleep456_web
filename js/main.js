@@ -382,10 +382,18 @@
   }
 
   // Quick booking widget: pick dates, see the nights summary, "Book now" reveals
-  // a contact step, submit posts to the same public booking-requests API as the
-  // modal above (/admin/api/booking-requests — deepsleep456-admin/src/app/api/
+  // a LINE login step then the amenities+contact step, submit posts to the
+  // same public booking-requests API as the modal above
+  // (/admin/api/booking-requests — deepsleep456-admin/src/app/api/
   // booking-requests/route.ts). This only files a request; staff still review/
   // approve it into a real booking from the "คำขอจองจากเว็บ" queue.
+  //
+  // The LINE login step (LIFF) captures the guest's LINE userId so the admin
+  // backend can push the confirmation straight into a 1:1 LINE chat with
+  // them — staff then just reply inside LINE/the OA app, no separate inbox
+  // needed. If the LIFF app isn't configured yet (empty data-liff-id) or the
+  // SDK fails to load, we skip straight to the old flow so the booking form
+  // never breaks because of it.
   var qbDatesStep = document.querySelector("[data-qb-step='dates']");
   if (qbDatesStep) {
     var qbLang = document.documentElement.lang === "en" ? "en" : "th";
@@ -393,6 +401,11 @@
     var qbCheckout = document.querySelector("[data-qb-checkout]");
     var qbSummary = document.querySelector("[data-qb-summary]");
     var qbNext = document.querySelector("[data-qb-next]");
+    var qbLoginStep = document.querySelector("[data-qb-step='line-login']");
+    var qbLoginRecap = document.querySelector("[data-qb-login-recap]");
+    var qbLoginBack = document.querySelector("[data-qb-login-back]");
+    var qbLineLoginBtn = document.querySelector("[data-qb-line-login]");
+    var qbLoginError = document.querySelector("[data-qb-login-error]");
     var qbAmenitiesStep = document.querySelector("[data-qb-step='amenities']");
     var qbAmenitiesRecap = document.querySelector("[data-qb-amenities-recap]");
     var qbAmenitiesBack = document.querySelector("[data-qb-amenities-back]");
@@ -400,6 +413,11 @@
     var qbError = document.querySelector("[data-qb-error]");
     var qbReset = document.querySelector("[data-qb-reset]");
     var qbSubmitBtn = document.querySelector("[data-qb-submit]");
+    var qbSection = document.getElementById("quick-booking");
+    var qbLiffId = qbSection ? qbSection.getAttribute("data-liff-id") : "";
+    var qbLiffReady = false;
+    var qbLineProfile = null;
+    var QB_PENDING_KEY = "ds456_qb_pending";
 
     var qbCopy = {
       th: {
@@ -409,7 +427,8 @@
         recap: function (ci, co, n) { return ci + " ถึง " + co + " (" + n + " คืน)"; },
         sending: "กำลังส่ง...",
         submit: "ส่งคำขอจอง",
-        genericError: "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่ หรือจองผ่าน LINE/โทรแทน"
+        genericError: "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่ หรือจองผ่าน LINE/โทรแทน",
+        loginError: "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"
       },
       en: {
         pickDates: "Pick your dates to see the number of nights",
@@ -418,7 +437,8 @@
         recap: function (ci, co, n) { return ci + " to " + co + " (" + n + (n === 1 ? " night" : " nights") + ")"; },
         sending: "Sending...",
         submit: "Send booking request",
-        genericError: "Couldn't send your request — please try again, or book via LINE/phone instead."
+        genericError: "Couldn't send your request — please try again, or book via LINE/phone instead.",
+        loginError: "LINE login failed — please try again."
       }
     }[qbLang];
 
@@ -467,12 +487,84 @@
       return qbCopy.recap(qbFormatDisplay(ci), qbFormatDisplay(co), n);
     }
 
+    function qbShowAmenities(recapText) {
+      var nameInput = qbAmenitiesStep.querySelector('[name="customerName"]');
+      if (nameInput && !nameInput.value && qbLineProfile && qbLineProfile.displayName) {
+        nameInput.value = qbLineProfile.displayName;
+      }
+      if (qbLoginStep) qbLoginStep.hidden = true;
+      qbAmenitiesRecap.textContent = recapText;
+      qbAmenitiesStep.hidden = false;
+    }
+
+    function qbFetchProfileThenShowAmenities(recapText) {
+      liff.getProfile().then(function (profile) {
+        qbLineProfile = profile;
+        qbShowAmenities(recapText);
+      }).catch(function (err) {
+        console.error("liff.getProfile failed", err);
+        if (qbLoginError) {
+          qbLoginError.textContent = qbCopy.loginError;
+          qbLoginError.hidden = false;
+        }
+      });
+    }
+
+    // Restores the dates + jumps straight to the amenities/contact step after
+    // LINE redirects back here post-login — the redirect is a full page
+    // reload so the picked dates (never sent to LINE) have to be stashed first.
+    function qbRestorePendingAfterLogin() {
+      var pending = null;
+      try { pending = JSON.parse(sessionStorage.getItem(QB_PENDING_KEY) || "null"); } catch (e) {}
+      if (!pending || !pending.checkIn || !pending.checkOut) return;
+      try { sessionStorage.removeItem(QB_PENDING_KEY); } catch (e) {}
+      var n = qbNightsBetween(pending.checkIn, pending.checkOut);
+      if (n <= 0) return;
+      qbCheckin.value = pending.checkIn;
+      qbCheckout.value = pending.checkOut;
+      qbDatesStep.hidden = true;
+      qbFetchProfileThenShowAmenities(qbCopy.recap(qbFormatDisplay(pending.checkIn), qbFormatDisplay(pending.checkOut), n));
+    }
+
+    if (qbLiffId && typeof liff !== "undefined") {
+      liff.init({ liffId: qbLiffId }).then(function () {
+        qbLiffReady = true;
+        if (liff.isLoggedIn()) qbRestorePendingAfterLogin();
+      }).catch(function (err) {
+        console.error("liff.init failed", err);
+      });
+    }
+
     qbNext.addEventListener("click", function () {
       if (qbNext.disabled) return;
-      qbAmenitiesRecap.textContent = qbCurrentRecap();
+      var recapText = qbCurrentRecap();
       qbDatesStep.hidden = true;
-      qbAmenitiesStep.hidden = false;
+
+      if (qbLiffReady && liff.isLoggedIn()) {
+        qbFetchProfileThenShowAmenities(recapText);
+      } else if (qbLiffReady && qbLoginStep) {
+        qbLoginRecap.textContent = recapText;
+        qbLoginStep.hidden = false;
+      } else {
+        qbShowAmenities(recapText);
+      }
     });
+
+    if (qbLoginBack) {
+      qbLoginBack.addEventListener("click", function () {
+        qbLoginStep.hidden = true;
+        qbDatesStep.hidden = false;
+      });
+    }
+
+    if (qbLineLoginBtn) {
+      qbLineLoginBtn.addEventListener("click", function () {
+        try {
+          sessionStorage.setItem(QB_PENDING_KEY, JSON.stringify({ checkIn: qbCheckin.value, checkOut: qbCheckout.value }));
+        } catch (e) {}
+        liff.login({ redirectUri: location.href });
+      });
+    }
 
     qbAmenitiesBack.addEventListener("click", function () {
       qbAmenitiesStep.hidden = true;
@@ -488,7 +580,9 @@
         customerPhone: fd.get("customerPhone"),
         customerEmail: fd.get("customerEmail") || null,
         checkIn: qbCheckin.value,
-        checkOut: qbCheckout.value
+        checkOut: qbCheckout.value,
+        lineUserId: qbLineProfile ? qbLineProfile.userId : null,
+        lineDisplayName: qbLineProfile ? qbLineProfile.displayName : null
       };
       qbSubmitBtn.disabled = true;
       qbSubmitBtn.textContent = qbCopy.sending;
