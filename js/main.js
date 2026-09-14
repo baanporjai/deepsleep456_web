@@ -396,11 +396,7 @@
     var qbAmenitiesStep = document.querySelector("[data-qb-step='amenities']");
     var qbAmenitiesRecap = document.querySelector("[data-qb-amenities-recap]");
     var qbAmenitiesBack = document.querySelector("[data-qb-amenities-back]");
-    var qbAmenitiesNext = document.querySelector("[data-qb-amenities-next]");
-    var qbContactStep = document.querySelector("[data-qb-step='contact']");
     var qbSuccessStep = document.querySelector("[data-qb-step='success']");
-    var qbBack = document.querySelector("[data-qb-back]");
-    var qbRecap = document.querySelector("[data-qb-recap]");
     var qbError = document.querySelector("[data-qb-error]");
     var qbReset = document.querySelector("[data-qb-reset]");
     var qbSubmitBtn = document.querySelector("[data-qb-submit]");
@@ -483,21 +479,10 @@
       qbDatesStep.hidden = false;
     });
 
-    qbAmenitiesNext.addEventListener("click", function () {
-      qbRecap.textContent = qbCurrentRecap();
-      qbAmenitiesStep.hidden = true;
-      qbContactStep.hidden = false;
-    });
-
-    qbBack.addEventListener("click", function () {
-      qbContactStep.hidden = true;
-      qbAmenitiesStep.hidden = false;
-    });
-
-    qbContactStep.addEventListener("submit", function (e) {
+    qbAmenitiesStep.addEventListener("submit", function (e) {
       e.preventDefault();
       qbError.hidden = true;
-      var fd = new FormData(qbContactStep);
+      var fd = new FormData(qbAmenitiesStep);
       var payload = {
         customerName: fd.get("customerName"),
         customerPhone: fd.get("customerPhone"),
@@ -515,7 +500,7 @@
         if (!res.ok) return res.json().then(function (data) { throw new Error(data && data.error); });
         return res.json();
       }).then(function () {
-        qbContactStep.hidden = true;
+        qbAmenitiesStep.hidden = true;
         qbSuccessStep.hidden = false;
       }).catch(function (err) {
         qbError.textContent = (err && err.message) ? err.message : qbCopy.genericError;
@@ -527,7 +512,7 @@
     });
 
     qbReset.addEventListener("click", function () {
-      qbContactStep.reset();
+      qbAmenitiesStep.reset();
       qbSuccessStep.hidden = true;
       qbAmenitiesStep.hidden = true;
       qbDatesStep.hidden = false;
