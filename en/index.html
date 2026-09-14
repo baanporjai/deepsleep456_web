@@ -176,9 +176,42 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
               <span>Check-out</span>
               <input type="date" data-qb-checkout required>
             </label>
+            <button type="button" class="btn btn--line btn--lg quick-booking__next" data-qb-next disabled>Book now</button>
           </div>
           <p class="quick-booking__summary" data-qb-summary>Pick your dates to see the number of nights</p>
-          <button type="button" class="btn btn--line btn--lg quick-booking__next" data-qb-next disabled>Book now</button>
+        </div>
+
+        <div class="quick-booking__step--amenities" data-qb-step="amenities" hidden>
+          <button type="button" class="quick-booking__back" data-qb-amenities-back>← Change dates</button>
+          <p class="quick-booking__recap" data-qb-amenities-recap></p>
+          <h3 class="quick-booking__amenities-title">What's included</h3>
+          <div class="quick-booking__rooms">
+            <div class="quick-booking__room">
+              <strong>Family Room</strong>
+              <span>2 six-foot beds · sleeps 4-5</span>
+            </div>
+            <div class="quick-booking__room">
+              <strong>Deluxe Room 1</strong>
+              <span>One seven-foot bed · sleeps 3</span>
+            </div>
+            <div class="quick-booking__room">
+              <strong>Deluxe Room 2</strong>
+              <span>One seven-foot bed · sleeps 3</span>
+            </div>
+          </div>
+          <p class="quick-booking__rooms-note">+ Extra sofa bed available in the living room</p>
+          <ul class="quick-booking__amenity-list">
+            <li>Indoor &amp; outdoor mountain-view bathtub</li>
+            <li>Free high-speed Wi-Fi</li>
+            <li>Free private parking</li>
+            <li>BBQ picnic sala</li>
+            <li>Free karaoke</li>
+            <li>Card game room</li>
+            <li>Free playground</li>
+            <li>Sunbathing deck</li>
+          </ul>
+          <p class="quick-booking__amenities-caveat">*No swimming pool — Deepsleep456 focuses on a private, nature-immersed home experience</p>
+          <button type="button" class="btn btn--line btn--lg" data-qb-amenities-next>Continue</button>
         </div>
 
         <form class="quick-booking__step--contact" data-qb-step="contact" hidden>

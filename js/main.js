@@ -393,6 +393,10 @@
     var qbCheckout = document.querySelector("[data-qb-checkout]");
     var qbSummary = document.querySelector("[data-qb-summary]");
     var qbNext = document.querySelector("[data-qb-next]");
+    var qbAmenitiesStep = document.querySelector("[data-qb-step='amenities']");
+    var qbAmenitiesRecap = document.querySelector("[data-qb-amenities-recap]");
+    var qbAmenitiesBack = document.querySelector("[data-qb-amenities-back]");
+    var qbAmenitiesNext = document.querySelector("[data-qb-amenities-next]");
     var qbContactStep = document.querySelector("[data-qb-step='contact']");
     var qbSuccessStep = document.querySelector("[data-qb-step='success']");
     var qbBack = document.querySelector("[data-qb-back]");
@@ -461,18 +465,33 @@
     qbCheckin.addEventListener("change", qbUpdateSummary);
     qbCheckout.addEventListener("change", qbUpdateSummary);
 
-    qbNext.addEventListener("click", function () {
-      if (qbNext.disabled) return;
+    function qbCurrentRecap() {
       var ci = qbCheckin.value, co = qbCheckout.value;
       var n = qbNightsBetween(ci, co);
-      qbRecap.textContent = qbCopy.recap(qbFormatDisplay(ci), qbFormatDisplay(co), n);
+      return qbCopy.recap(qbFormatDisplay(ci), qbFormatDisplay(co), n);
+    }
+
+    qbNext.addEventListener("click", function () {
+      if (qbNext.disabled) return;
+      qbAmenitiesRecap.textContent = qbCurrentRecap();
       qbDatesStep.hidden = true;
+      qbAmenitiesStep.hidden = false;
+    });
+
+    qbAmenitiesBack.addEventListener("click", function () {
+      qbAmenitiesStep.hidden = true;
+      qbDatesStep.hidden = false;
+    });
+
+    qbAmenitiesNext.addEventListener("click", function () {
+      qbRecap.textContent = qbCurrentRecap();
+      qbAmenitiesStep.hidden = true;
       qbContactStep.hidden = false;
     });
 
     qbBack.addEventListener("click", function () {
       qbContactStep.hidden = true;
-      qbDatesStep.hidden = false;
+      qbAmenitiesStep.hidden = false;
     });
 
     qbContactStep.addEventListener("submit", function (e) {
@@ -510,6 +529,7 @@
     qbReset.addEventListener("click", function () {
       qbContactStep.reset();
       qbSuccessStep.hidden = true;
+      qbAmenitiesStep.hidden = true;
       qbDatesStep.hidden = false;
       qbCheckin.value = "";
       qbCheckout.value = "";
