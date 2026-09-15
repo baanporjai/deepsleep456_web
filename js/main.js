@@ -425,6 +425,7 @@
         nights: function (n) { return n + " คืน"; },
         priced: function (n, total) { return n + " คืน · รวม " + qbMoney(total); },
         invalid: "วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน",
+        unavailable: "ช่วงวันที่นี้เต็มแล้ว กรุณาเลือกวันอื่น",
         recap: function (ci, co, n, total) {
           var base = ci + " ถึง " + co + " (" + n + " คืน)";
           return total != null ? base + " · รวม " + qbMoney(total) : base;
@@ -439,6 +440,7 @@
         nights: function (n) { return n + (n === 1 ? " night" : " nights"); },
         priced: function (n, total) { return n + (n === 1 ? " night" : " nights") + " · Total " + qbMoney(total); },
         invalid: "Check-out must be after check-in",
+        unavailable: "These dates are fully booked — please pick different dates.",
         recap: function (ci, co, n, total) {
           var base = ci + " to " + co + " (" + n + (n === 1 ? " night" : " nights") + ")";
           return total != null ? base + " · Total " + qbMoney(total) : base;
@@ -480,6 +482,7 @@
 
     var qbLastQuote = null; // { checkIn, checkOut, total } — lets qbCurrentRecap reuse the fetched price without another round trip
     var qbQuoteToken = 0;
+    var qbLastAvailability = null; // { checkIn, checkOut, available } — set once /api/availability answers for these exact dates
 
     function qbFetchQuote(ci, co, n) {
       var token = ++qbQuoteToken;
@@ -489,7 +492,27 @@
           if (!data || token !== qbQuoteToken) return; // stale response from an earlier date change
           if (qbCheckin.value !== ci || qbCheckout.value !== co) return; // dates changed again while this was in flight
           qbLastQuote = { checkIn: ci, checkOut: co, total: data.total };
-          qbSummary.textContent = qbCopy.priced(n, data.total);
+          if (!(qbLastAvailability && qbLastAvailability.checkIn === ci && qbLastAvailability.checkOut === co && !qbLastAvailability.available)) {
+            qbSummary.textContent = qbCopy.priced(n, data.total);
+          }
+        })
+        .catch(function () {});
+    }
+
+    // เช็คห้องว่างจริงจากระบบหลังบ้าน (deepsleep456-admin/src/app/api/availability/
+    // route.ts) ทันทีที่เลือกวันที่ — กันลูกค้าเสียเวลาผ่าน LINE login + กรอกฟอร์ม
+    // ทั้งหมดแล้วมาเจอปฏิเสธทีหลัง ถ้าเช็คไม่ผ่าน (fetch ล่ม/ช้า) ปล่อยให้จองต่อได้ตาม
+    // ปกติ — ตัวกันจริงคือฝั่ง backend ตอนสร้างคำขอ (createBookingRequest) อยู่แล้ว
+    function qbFetchAvailability(ci, co) {
+      fetch("/admin/api/availability?checkIn=" + ci + "&checkOut=" + co)
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (!data || qbCheckin.value !== ci || qbCheckout.value !== co) return; // dates changed again while this was in flight
+          qbLastAvailability = { checkIn: ci, checkOut: co, available: data.available };
+          if (!data.available) {
+            qbSummary.textContent = qbCopy.unavailable;
+            qbNext.disabled = true;
+          }
         })
         .catch(function () {});
     }
@@ -511,6 +534,7 @@
       qbSummary.textContent = qbCopy.nights(n);
       qbNext.disabled = false;
       qbFetchQuote(ci, co, n);
+      qbFetchAvailability(ci, co);
     }
     qbCheckin.addEventListener("change", qbUpdateSummary);
     qbCheckout.addEventListener("change", qbUpdateSummary);
