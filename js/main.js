@@ -433,7 +433,8 @@
         sending: "กำลังส่ง...",
         submit: "ส่งคำขอจอง",
         genericError: "ส่งคำขอไม่สำเร็จ กรุณาลองใหม่ หรือจองผ่าน LINE/โทรแทน",
-        loginError: "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง"
+        loginError: "เข้าสู่ระบบด้วย LINE ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+        addonsNote: "บริการเสริมที่เลือก: "
       },
       en: {
         pickDates: "Pick your dates to see the number of nights",
@@ -448,7 +449,8 @@
         sending: "Sending...",
         submit: "Send booking request",
         genericError: "Couldn't send your request — please try again, or book via LINE/phone instead.",
-        loginError: "LINE login failed — please try again."
+        loginError: "LINE login failed — please try again.",
+        addonsNote: "Add-ons selected: "
       }
     }[qbLang];
 
@@ -634,12 +636,14 @@
       e.preventDefault();
       qbError.hidden = true;
       var fd = new FormData(qbAmenitiesStep);
+      var selectedAddons = fd.getAll("addons");
       var payload = {
         customerName: fd.get("customerName"),
         customerPhone: fd.get("customerPhone"),
         customerEmail: fd.get("customerEmail") || null,
         checkIn: qbCheckin.value,
         checkOut: qbCheckout.value,
+        note: selectedAddons.length ? qbCopy.addonsNote + selectedAddons.join(", ") : null,
         lineUserId: qbLineProfile ? qbLineProfile.userId : null,
         lineDisplayName: qbLineProfile ? qbLineProfile.displayName : null
       };
