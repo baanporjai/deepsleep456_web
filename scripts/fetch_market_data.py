@@ -20,6 +20,7 @@ reliable for DXY/Gold/US10Y/USDTHB tickers in the macro-telegram-bot project).
 from __future__ import annotations
 
 import json
+import math
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,6 +106,13 @@ def fetch_bdry() -> dict:
         raise ValueError(f"BDRY: got {len(hist)} rows, need >= 2")
     last = float(hist["Close"].iloc[-1])
     prev = float(hist["Close"].iloc[-2])
+    # แถวล่าสุดบางทีเป็นวันที่ตลาดยังไม่ปิด yfinance คืน Close มาเป็น NaN ได้ทั้งที่
+    # จำนวนแถวครบ 2 แถวแล้ว (เช็คแค่ len(hist) ไม่พอ) ปล่อยผ่านไปจะได้ NaN ติด JSON
+    # ออกไป ซึ่งไม่ใช่ JSON ที่ถูกต้อง (RFC 8259 ไม่รับ NaN) — JSON.parse() ฝั่งเว็บจะ
+    # throw ทันทีตอนโหลดไฟล์ ทำให้ค่าทุกช่องบนแดชบอร์ดไม่ auto-fill เลยสักช่อง แม้ช่องอื่น
+    # จะดึงมาได้ปกติก็ตาม — raise ตรงนี้แทน ให้ตกไปใช้ None (null) เหมือน error ปกติ
+    if math.isnan(last) or math.isnan(prev):
+        raise ValueError(f"BDRY: got NaN close (last={last}, prev={prev})")
     return {"last": last, "pct": (last / prev - 1.0) * 100.0}
 
 
@@ -154,8 +162,21 @@ def main():
         print(f"[FAIL -> null] usdthb_trend: {type(e).__name__}: {e}")
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(json.dumps(out), encoding="utf-8")
+    # กันเผื่อ NaN หลุดมาจากจุดอื่นในอนาคตที่ยังไม่รู้ตัว (เช่น future field ที่คำนวณ
+    # ผ่าน pandas/numpy) — sanitize เป็น null ก่อนเขียนเสมอ แทนที่จะปล่อยให้
+    # json.dumps() ใส่ NaN ดิบๆ ซึ่งไม่ใช่ JSON ที่ถูกต้องออกไปเงียบๆ
+    OUT_PATH.write_text(json.dumps(_sanitize_nan(out)), encoding="utf-8")
     print(f"wrote {OUT_PATH}")
+
+
+def _sanitize_nan(value):
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, dict):
+        return {k: _sanitize_nan(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_sanitize_nan(v) for v in value]
+    return value
 
 
 if __name__ == "__main__":
