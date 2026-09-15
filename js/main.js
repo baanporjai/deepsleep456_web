@@ -538,7 +538,16 @@
       qbFetchQuote(ci, co, n);
       qbFetchAvailability(ci, co);
     }
-    qbCheckin.addEventListener("change", qbUpdateSummary);
+    qbCheckin.addEventListener("change", function () {
+      qbUpdateSummary();
+      // เลือกเช็คอินแล้วแต่ยังไม่ได้เลือกเช็คเอาท์ — เปิดปฏิทินเช็คเอาท์ต่อให้เลย ลูกค้า
+      // กดเลือกวันที่สองได้ทันทีโดยไม่ต้องกดเปิดช่องเช็คเอาท์เอง (showPicker รองรับ
+      // เฉพาะบางเบราว์เซอร์ เช่น Chrome/Edge — เบราว์เซอร์อื่นแค่ข้ามไปเงียบๆ ผู้ใช้ยัง
+      // กดเปิดเองได้ตามปกติ)
+      if (!qbCheckout.value && typeof qbCheckout.showPicker === "function") {
+        try { qbCheckout.showPicker(); } catch (err) {}
+      }
+    });
     qbCheckout.addEventListener("change", qbUpdateSummary);
 
     function qbCurrentRecap() {
