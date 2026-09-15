@@ -425,7 +425,7 @@
         nights: function (n) { return n + " คืน"; },
         priced: function (n, total) { return n + " คืน · รวม " + qbMoney(total); },
         invalid: "วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน",
-        unavailable: "ช่วงวันที่นี้เต็มแล้ว กรุณาเลือกวันอื่น",
+        unavailable: "ช่วงวันที่นี้ มีคนจองแล้ว กรุณาเลือกวันอื่นนะค่ะ",
         recap: function (ci, co, n, total) {
           var base = ci + " ถึง " + co + " (" + n + " คืน)";
           return total != null ? base + " · รวม " + qbMoney(total) : base;
