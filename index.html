@@ -273,6 +273,11 @@ button { font-family: inherit; }
 .quick-booking__amenity-list li { list-style: none; padding-left: 22px; position: relative; }
 .quick-booking__amenity-list li::before { content: "✓"; position: absolute; left: 0; color: var(--color-forest); font-weight: 700; }
 .quick-booking__amenities-caveat { font-size: .8rem; color: #6b6553; font-style: italic; margin: 0 0 20px; }
+.quick-booking__addon-list { display: grid; gap: 10px; text-align: left; margin: 0 0 20px; }
+.quick-booking__addon-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; background: var(--color-sand); border-radius: 10px; padding: 10px 14px; font-size: .88rem; color: var(--color-charcoal); }
+.quick-booking__addon-list li span { flex: 1; }
+.quick-booking__addon-list li small { color: #6b6553; font-size: .78rem; }
+.quick-booking__addon-list li strong { color: var(--color-forest-dark); white-space: nowrap; }
 .quick-booking__fields { display: grid; gap: 14px; margin-bottom: 18px; text-align: left; }
 .quick-booking__error { color: #B3261E; font-size: .88rem; margin: 0 0 14px; }
 .quick-booking__step--login .btn { width: 100%; max-width: 300px; margin: 0 auto; }
@@ -867,6 +872,22 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
             <li>พื้นที่อาบแดดวิวภูเขา</li>
           </ul>
           <p class="quick-booking__amenities-caveat">*ที่พักไม่มีสระว่ายน้ำ เน้นบรรยากาศบ้านพักส่วนตัวท่ามกลางธรรมชาติ</p>
+
+          <h3 class="quick-booking__amenities-title">บริการเสริม (มีค่าใช้จ่ายเพิ่มเติม)</h3>
+          <ul class="quick-booking__addon-list">
+            <li>
+              <span>หมูกระทะ ชุดละ 2-3 ท่าน<br><small>ฟรีค่าเช่าเตาหมูกระทะ (ปกติ 250 บาท)</small></span>
+              <strong>450 บาท</strong>
+            </li>
+            <li>
+              <span>นวดถึงที่พัก (จองล่วงหน้า)</span>
+              <strong>399 บาท/ชม.</strong>
+            </li>
+            <li>
+              <span>อาหารเช้าตามเมนูที่ส่งให้</span>
+            </li>
+          </ul>
+
           <h3 class="quick-booking__amenities-title">กรอกข้อมูลติดต่อ</h3>
           <div class="quick-booking__fields">
             <label class="quick-booking__field">
