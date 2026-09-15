@@ -234,6 +234,26 @@ button { font-family: inherit; }
 .quick-booking__field input:focus { outline: none; border-color: var(--color-forest); background: #fff; }
 .quick-booking__summary { font-weight: 600; color: var(--color-forest-dark); margin: 0 0 20px; min-height: 1.4em; }
 .quick-booking__next { flex-shrink: 0; }
+.quick-booking__date-field { display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: .88rem; font-weight: 500; color: var(--color-forest-dark); min-width: 190px; flex: 1; font-family: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+.quick-booking__dates .quick-booking__date-field > span { display: block; width: 100%; text-align: center; }
+.quick-booking__date-field strong { display: block; font-weight: 500; font-size: 1rem; padding: 12px 14px; border-radius: 10px; border: 1.5px solid rgba(63,91,68,.25); color: var(--color-charcoal); background: var(--color-sand); text-align: center; }
+.quick-booking__date-field[aria-expanded="true"] strong { outline: none; border-color: var(--color-forest); background: #fff; }
+.quick-booking__date-native { display: none; }
+.quick-booking__calendar { max-width: 340px; margin: 0 auto 16px; background: #fff; border: 1.5px solid rgba(63,91,68,.25); border-radius: 14px; padding: 16px; box-shadow: var(--shadow-card); }
+.quick-booking__calendar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-weight: 600; color: var(--color-forest-dark); }
+.quick-booking__calendar-nav { background: var(--color-sand); border: none; border-radius: 8px; width: 32px; height: 32px; font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--color-forest-dark); }
+.quick-booking__calendar-nav:disabled { opacity: .35; cursor: not-allowed; }
+.quick-booking__calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); font-size: .74rem; color: #6b6553; text-align: center; margin-bottom: 4px; }
+.quick-booking__calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.quick-booking__calendar-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: none; background: none; border-radius: 8px; font-size: .86rem; color: var(--color-charcoal); cursor: pointer; }
+.quick-booking__calendar-day:disabled { color: #c9c2ae; cursor: not-allowed; }
+.quick-booking__calendar-day--empty { visibility: hidden; cursor: default; }
+.quick-booking__calendar-day--today { font-weight: 700; }
+.quick-booking__calendar-day--in-range { background: rgba(63,91,68,.12); border-radius: 0; }
+.quick-booking__calendar-day--start { background: var(--color-forest); color: #fff; border-radius: 8px 0 0 8px; }
+.quick-booking__calendar-day--end { background: var(--color-forest); color: #fff; border-radius: 0 8px 8px 0; }
+.quick-booking__calendar-day--start.quick-booking__calendar-day--end { border-radius: 8px; }
+.quick-booking__calendar-day:not(:disabled):hover { background: rgba(63,91,68,.18); }
 .quick-booking__back { background: none; border: none; color: var(--color-clay-text); font-weight: 500; cursor: pointer; padding: 0; margin: 0 0 14px; font-size: .9rem; }
 .quick-booking__recap { font-weight: 600; color: var(--color-forest-dark); margin: 0 0 18px; }
 .quick-booking__amenities-title { font-family: var(--font-heading); font-size: 1.1rem; color: var(--color-forest-dark); margin: 0 0 14px; }
@@ -270,6 +290,7 @@ button { font-family: inherit; }
   .quick-booking__next { width: 100%; }
   .quick-booking__rooms { grid-template-columns: 1fr; }
   .quick-booking__amenity-list { grid-template-columns: 1fr; }
+  .quick-booking__calendar { max-width: 100%; }
 }
 
 /* Gallery */

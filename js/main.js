@@ -406,6 +406,15 @@
     var qbLoginBack = document.querySelector("[data-qb-login-back]");
     var qbLineLoginBtn = document.querySelector("[data-qb-line-login]");
     var qbLoginError = document.querySelector("[data-qb-login-error]");
+    var qbCalendarEl = document.querySelector("[data-qb-calendar]");
+    var qbCalGrid = document.querySelector("[data-qb-cal-grid]");
+    var qbCalMonthLabel = document.querySelector("[data-qb-cal-month]");
+    var qbCalPrevBtn = document.querySelector("[data-qb-cal-prev]");
+    var qbCalNextBtn = document.querySelector("[data-qb-cal-next]");
+    var qbCheckinTrigger = document.querySelector("[data-qb-date-trigger='checkin']");
+    var qbCheckoutTrigger = document.querySelector("[data-qb-date-trigger='checkout']");
+    var qbCheckinDisplay = document.querySelector("[data-qb-checkin-display]");
+    var qbCheckoutDisplay = document.querySelector("[data-qb-checkout-display]");
     var qbAmenitiesStep = document.querySelector("[data-qb-step='amenities']");
     var qbAmenitiesRecap = document.querySelector("[data-qb-amenities-recap]");
     var qbAmenitiesBack = document.querySelector("[data-qb-amenities-back]");
@@ -538,17 +547,141 @@
       qbFetchQuote(ci, co, n);
       qbFetchAvailability(ci, co);
     }
-    qbCheckin.addEventListener("change", function () {
-      qbUpdateSummary();
-      // เลือกเช็คอินแล้วแต่ยังไม่ได้เลือกเช็คเอาท์ — เปิดปฏิทินเช็คเอาท์ต่อให้เลย ลูกค้า
-      // กดเลือกวันที่สองได้ทันทีโดยไม่ต้องกดเปิดช่องเช็คเอาท์เอง (showPicker รองรับ
-      // เฉพาะบางเบราว์เซอร์ เช่น Chrome/Edge — เบราว์เซอร์อื่นแค่ข้ามไปเงียบๆ ผู้ใช้ยัง
-      // กดเปิดเองได้ตามปกติ)
-      if (!qbCheckout.value && typeof qbCheckout.showPicker === "function") {
-        try { qbCheckout.showPicker(); } catch (err) {}
-      }
-    });
+    qbCheckin.addEventListener("change", qbUpdateSummary);
     qbCheckout.addEventListener("change", qbUpdateSummary);
+
+    // Custom inline calendar replacing the native date pickers. A native
+    // <input type="date"> needs its own open > scroll/tap > confirm cycle per
+    // field — clunky on mobile, and doubly so across two separate fields.
+    // Here the underlying <input type="date"> elements (data-qb-checkin/
+    // -checkout) stay in the DOM as the source of truth (hidden, driven via
+    // .value + a dispatched "change") so every existing bit of logic above
+    // that already reads/writes them — quote/availability fetches, recap,
+    // submit payload, LINE-login restore — keeps working untouched. This
+    // block only replaces how the user picks the two values: one calendar,
+    // click check-in then click check-out right after, no separate open/close
+    // per field.
+    var qbCalToday = new Date();
+    qbCalToday.setHours(0, 0, 0, 0);
+    var qbCalViewYear = qbCalToday.getFullYear();
+    var qbCalViewMonth = qbCalToday.getMonth();
+    var qbCalSelecting = "checkin"; // which date the next day-click sets
+    var qbCalMonthFmt = new Intl.DateTimeFormat(qbLang === "th" ? "th-TH" : "en-GB", { month: "long", year: "numeric" });
+    var qbDatePlaceholder = qbLang === "th" ? "เลือกวันที่" : "Select a date";
+
+    function qbRefreshDateDisplays() {
+      qbCheckinDisplay.textContent = qbCheckin.value ? qbFormatDisplay(qbCheckin.value) : qbDatePlaceholder;
+      qbCheckoutDisplay.textContent = qbCheckout.value ? qbFormatDisplay(qbCheckout.value) : qbDatePlaceholder;
+    }
+
+    function qbSetDateValue(input, value) {
+      input.value = value;
+      input.dispatchEvent(new Event("change"));
+    }
+
+    function qbRenderCalendar() {
+      qbCalMonthLabel.textContent = qbCalMonthFmt.format(new Date(qbCalViewYear, qbCalViewMonth, 1));
+      var firstWeekday = new Date(qbCalViewYear, qbCalViewMonth, 1).getDay();
+      var daysInMonth = new Date(qbCalViewYear, qbCalViewMonth + 1, 0).getDate();
+      var todayIso = qbDateStr(qbCalToday);
+      var minMonthIndex = qbCalToday.getFullYear() * 12 + qbCalToday.getMonth();
+      var viewMonthIndex = qbCalViewYear * 12 + qbCalViewMonth;
+      qbCalPrevBtn.disabled = viewMonthIndex <= minMonthIndex;
+
+      var html = "";
+      var i;
+      for (i = 0; i < firstWeekday; i++) {
+        html += '<span class="quick-booking__calendar-day quick-booking__calendar-day--empty"></span>';
+      }
+      for (var day = 1; day <= daysInMonth; day++) {
+        var iso = qbDateStr(new Date(qbCalViewYear, qbCalViewMonth, day));
+        var disabled = iso < todayIso || (qbCalSelecting === "checkout" && qbCheckin.value && iso <= qbCheckin.value);
+        var classes = "quick-booking__calendar-day"
+          + (iso === todayIso ? " quick-booking__calendar-day--today" : "")
+          + (qbCheckin.value && iso === qbCheckin.value ? " quick-booking__calendar-day--start" : "")
+          + (qbCheckout.value && iso === qbCheckout.value ? " quick-booking__calendar-day--end" : "")
+          + (qbCheckin.value && qbCheckout.value && iso > qbCheckin.value && iso < qbCheckout.value ? " quick-booking__calendar-day--in-range" : "");
+        html += '<button type="button" class="' + classes + '" data-qb-cal-date="' + iso + '"' + (disabled ? " disabled" : "") + '>' + day + '</button>';
+      }
+      qbCalGrid.innerHTML = html;
+    }
+
+    function qbOpenCalendar(selecting) {
+      qbCalSelecting = selecting;
+      qbCalendarEl.hidden = false;
+      qbCheckinTrigger.setAttribute("aria-expanded", String(selecting === "checkin"));
+      qbCheckoutTrigger.setAttribute("aria-expanded", String(selecting === "checkout"));
+      var base = selecting === "checkin" ? qbCheckin.value : (qbCheckout.value || qbCheckin.value);
+      if (base) {
+        var d = new Date(base + "T00:00:00");
+        qbCalViewYear = d.getFullYear();
+        qbCalViewMonth = d.getMonth();
+      }
+      qbRenderCalendar();
+    }
+
+    function qbCloseCalendar() {
+      qbCalendarEl.hidden = true;
+      qbCheckinTrigger.setAttribute("aria-expanded", "false");
+      qbCheckoutTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    qbCalGrid.addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest("[data-qb-cal-date]") : null;
+      if (!btn || btn.disabled) return;
+      // กันไม่ให้คลิกนี้ไปโดน document click-outside handler ด้านล่าง — ปุ่มที่เพิ่งกด
+      // จะถูกลบทิ้งทันทีตอน re-render กริด (qbCalGrid.innerHTML = ...) ทำให้ event ที่
+      // bubble ต่อไปถึง document เจอ e.target หลุดออกจาก DOM แล้ว contains() เลย false
+      // แล้วปฏิทินถูกปิดผิดจังหวะ (ปิดเองทันทีหลังเลือกวันแรก ทั้งที่ควรเปิดรอเลือกวันที่สอง)
+      e.stopPropagation();
+      var iso = btn.getAttribute("data-qb-cal-date");
+
+      if (qbCalSelecting === "checkin" || !qbCheckin.value || iso <= qbCheckin.value) {
+        // เลือกเช็คอินใหม่ (หรือกำลังเลือกเช็คเอาท์แต่กดวันที่ก่อน/เท่ากับเช็คอินเดิม —
+        // ตีความว่าอยากเริ่มช่วงใหม่จากวันนี้แทน) เริ่มช่วงใหม่เสมอ ล้างเช็คเอาท์เดิมทิ้ง
+        qbSetDateValue(qbCheckin, iso);
+        qbSetDateValue(qbCheckout, "");
+        qbRefreshDateDisplays();
+        qbCalSelecting = "checkout";
+        qbCheckinTrigger.setAttribute("aria-expanded", "false");
+        qbCheckoutTrigger.setAttribute("aria-expanded", "true");
+        qbRenderCalendar();
+        return;
+      }
+
+      qbSetDateValue(qbCheckout, iso);
+      qbRefreshDateDisplays();
+      qbCalSelecting = "checkin";
+      qbCloseCalendar();
+    });
+
+    qbCalPrevBtn.addEventListener("click", function () {
+      qbCalViewMonth -= 1;
+      if (qbCalViewMonth < 0) { qbCalViewMonth = 11; qbCalViewYear -= 1; }
+      qbRenderCalendar();
+    });
+    qbCalNextBtn.addEventListener("click", function () {
+      qbCalViewMonth += 1;
+      if (qbCalViewMonth > 11) { qbCalViewMonth = 0; qbCalViewYear += 1; }
+      qbRenderCalendar();
+    });
+
+    qbCheckinTrigger.addEventListener("click", function () {
+      if (!qbCalendarEl.hidden && qbCalSelecting === "checkin") { qbCloseCalendar(); return; }
+      qbOpenCalendar("checkin");
+    });
+    qbCheckoutTrigger.addEventListener("click", function () {
+      if (!qbCalendarEl.hidden && qbCalSelecting === "checkout") { qbCloseCalendar(); return; }
+      qbOpenCalendar(qbCheckin.value ? "checkout" : "checkin");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (qbCalendarEl.hidden) return;
+      if (qbCalendarEl.contains(e.target) || qbCheckinTrigger.contains(e.target) || qbCheckoutTrigger.contains(e.target)) return;
+      qbCloseCalendar();
+    });
+
+    qbRefreshDateDisplays();
 
     function qbCurrentRecap() {
       var ci = qbCheckin.value, co = qbCheckout.value;
@@ -592,6 +725,7 @@
       if (n <= 0) return;
       qbCheckin.value = pending.checkIn;
       qbCheckout.value = pending.checkOut;
+      qbRefreshDateDisplays();
       qbDatesStep.hidden = true;
       qbFetchProfileThenShowAmenities(qbCopy.recap(qbFormatDisplay(pending.checkIn), qbFormatDisplay(pending.checkOut), n));
     }
@@ -684,6 +818,9 @@
       qbDatesStep.hidden = false;
       qbCheckin.value = "";
       qbCheckout.value = "";
+      qbCalSelecting = "checkin";
+      qbCloseCalendar();
+      qbRefreshDateDisplays();
       qbUpdateSummary();
     });
   }

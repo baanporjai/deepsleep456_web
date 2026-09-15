@@ -168,16 +168,31 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
 
         <div data-qb-step="dates">
           <div class="quick-booking__dates">
-            <label class="quick-booking__field">
+            <button type="button" class="quick-booking__date-field" data-qb-date-trigger="checkin" aria-expanded="false">
               <span>Check-in</span>
-              <input type="date" data-qb-checkin required>
-            </label>
-            <label class="quick-booking__field">
+              <strong data-qb-checkin-display>Select a date</strong>
+            </button>
+            <button type="button" class="quick-booking__date-field" data-qb-date-trigger="checkout" aria-expanded="false">
               <span>Check-out</span>
-              <input type="date" data-qb-checkout required>
-            </label>
+              <strong data-qb-checkout-display>Select a date</strong>
+            </button>
+            <input type="date" data-qb-checkin class="quick-booking__date-native">
+            <input type="date" data-qb-checkout class="quick-booking__date-native">
             <button type="button" class="btn btn--line btn--lg quick-booking__next" data-qb-next disabled>Book now</button>
           </div>
+
+          <div class="quick-booking__calendar" data-qb-calendar hidden>
+            <div class="quick-booking__calendar-head">
+              <button type="button" class="quick-booking__calendar-nav" data-qb-cal-prev aria-label="Previous month">‹</button>
+              <strong data-qb-cal-month></strong>
+              <button type="button" class="quick-booking__calendar-nav" data-qb-cal-next aria-label="Next month">›</button>
+            </div>
+            <div class="quick-booking__calendar-weekdays">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="quick-booking__calendar-grid" data-qb-cal-grid></div>
+          </div>
+
           <p class="quick-booking__summary" data-qb-summary>Pick your dates to see the number of nights</p>
         </div>
 
