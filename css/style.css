@@ -444,6 +444,60 @@ button { font-family: inherit; }
 .video-facade iframe { width: 100%; height: 100%; border: 0; }
 .reviews__video-caption { margin: 12px 0 0; font-size: .85rem; color: #6b6553; }
 .reviews__note { text-align: center; margin-top: 26px; color: #5c5745; font-size: .85rem; }
+/* Video review hub: pick a clip, the newest are first (see data-clips in main.js) */
+.reviews__layout--stack { grid-template-columns: 1fr; gap: 44px; }
+.reviews__layout--stack .reviews__grid { grid-template-columns: repeat(4, 1fr); }
+.clips__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; margin-bottom: 22px; }
+.clips__title { font-family: var(--font-heading); font-size: 1.6rem; line-height: 1.25; color: var(--color-forest-dark); margin: 0; }
+.clips__sub { margin: 4px 0 0; color: #6b6553; font-size: .9rem; }
+.clips__tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.clips__tab {
+  border: 1.5px solid rgba(63,91,68,.3); background: #fff; color: var(--color-forest-dark); border-radius: 999px;
+  padding: 8px 16px; font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; line-height: 1.2;
+}
+.clips__tab span { opacity: .6; margin-left: 4px; font-weight: 500; }
+.clips__tab:hover { border-color: var(--color-forest); }
+.clips__tab.is-active { background: var(--color-forest); border-color: var(--color-forest); color: #fff; }
+.clips__stage { display: grid; grid-template-columns: 340px 1fr; gap: 36px; align-items: start; }
+.clips__player { position: sticky; top: calc(var(--header-height) + 16px); }
+.clips__player:empty { display: none; }
+.clips__stage:has(.clips__player:empty) { grid-template-columns: 1fr; }
+.clips__player .video-facade { max-width: 340px; margin: 0 auto; }
+.clips__now { margin: 14px auto 0; max-width: 340px; text-align: center; }
+.clips__now strong { display: block; font-weight: 600; color: var(--color-forest-dark); font-size: .95rem; line-height: 1.4; }
+.clips__open { display: inline-block; margin-top: 6px; color: var(--color-forest); font-weight: 500; font-size: .86rem; border-bottom: 2px solid var(--color-clay); }
+.clips__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px 16px; }
+.clip-item[hidden] { display: none; }
+.clip { display: block; color: inherit; text-decoration: none; }
+.clip__thumb {
+  position: relative; display: block; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #000;
+  border: 3px solid transparent; box-shadow: var(--shadow-card); transition: transform .15s ease, border-color .15s ease;
+}
+.clip__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.clip:hover .clip__thumb, .clip:focus-visible .clip__thumb { transform: translateY(-3px); }
+.clip.is-active .clip__thumb { border-color: var(--color-clay); }
+.clip__badge {
+  position: absolute; top: 8px; left: 8px; padding: 3px 9px; border-radius: 999px; font-style: normal;
+  background: rgba(20,26,21,.78); color: #fff; font-size: .72rem; font-weight: 600; line-height: 1.3;
+}
+.clip__badge--new { left: auto; right: 8px; background: var(--color-clay); }
+.clip__play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.clip__play svg { width: 44px; height: 44px; color: #fff; background: rgba(46,42,34,.55); border-radius: 50%; padding: 11px; box-sizing: border-box; }
+.clip.is-active .clip__play svg { background: var(--color-clay); }
+.clip__title { display: block; margin-top: 8px; font-size: .85rem; line-height: 1.45; color: #45402f; }
+@media (max-width: 900px) {
+  .reviews__layout--stack .reviews__grid { grid-template-columns: repeat(2, 1fr); }
+  .clips__stage { grid-template-columns: 1fr; gap: 22px; }
+  .clips__player { position: static; }
+  .clips__list { display: flex; overflow-x: auto; gap: 14px; padding-bottom: 12px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+  .clip-item { flex: 0 0 132px; scroll-snap-align: start; }
+}
+@media (max-width: 560px) {
+  .reviews__layout--stack .reviews__grid { grid-template-columns: 1fr; }
+  .clips__title { font-size: 1.35rem; }
+  .clips__player .video-facade, .clips__now { max-width: 280px; }
+}
+@media (prefers-reduced-motion: reduce) { .clip__thumb { transition: none; } }
 
 /* Map */
 .map-section__grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }

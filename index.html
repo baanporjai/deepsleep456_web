@@ -470,6 +470,60 @@ button { font-family: inherit; }
 .video-facade iframe { width: 100%; height: 100%; border: 0; }
 .reviews__video-caption { margin: 12px 0 0; font-size: .85rem; color: #6b6553; }
 .reviews__note { text-align: center; margin-top: 26px; color: #5c5745; font-size: .85rem; }
+/* Video review hub: pick a clip, the newest are first (see data-clips in main.js) */
+.reviews__layout--stack { grid-template-columns: 1fr; gap: 44px; }
+.reviews__layout--stack .reviews__grid { grid-template-columns: repeat(4, 1fr); }
+.clips__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; margin-bottom: 22px; }
+.clips__title { font-family: var(--font-heading); font-size: 1.6rem; line-height: 1.25; color: var(--color-forest-dark); margin: 0; }
+.clips__sub { margin: 4px 0 0; color: #6b6553; font-size: .9rem; }
+.clips__tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.clips__tab {
+  border: 1.5px solid rgba(63,91,68,.3); background: #fff; color: var(--color-forest-dark); border-radius: 999px;
+  padding: 8px 16px; font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; line-height: 1.2;
+}
+.clips__tab span { opacity: .6; margin-left: 4px; font-weight: 500; }
+.clips__tab:hover { border-color: var(--color-forest); }
+.clips__tab.is-active { background: var(--color-forest); border-color: var(--color-forest); color: #fff; }
+.clips__stage { display: grid; grid-template-columns: 340px 1fr; gap: 36px; align-items: start; }
+.clips__player { position: sticky; top: calc(var(--header-height) + 16px); }
+.clips__player:empty { display: none; }
+.clips__stage:has(.clips__player:empty) { grid-template-columns: 1fr; }
+.clips__player .video-facade { max-width: 340px; margin: 0 auto; }
+.clips__now { margin: 14px auto 0; max-width: 340px; text-align: center; }
+.clips__now strong { display: block; font-weight: 600; color: var(--color-forest-dark); font-size: .95rem; line-height: 1.4; }
+.clips__open { display: inline-block; margin-top: 6px; color: var(--color-forest); font-weight: 500; font-size: .86rem; border-bottom: 2px solid var(--color-clay); }
+.clips__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px 16px; }
+.clip-item[hidden] { display: none; }
+.clip { display: block; color: inherit; text-decoration: none; }
+.clip__thumb {
+  position: relative; display: block; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #000;
+  border: 3px solid transparent; box-shadow: var(--shadow-card); transition: transform .15s ease, border-color .15s ease;
+}
+.clip__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.clip:hover .clip__thumb, .clip:focus-visible .clip__thumb { transform: translateY(-3px); }
+.clip.is-active .clip__thumb { border-color: var(--color-clay); }
+.clip__badge {
+  position: absolute; top: 8px; left: 8px; padding: 3px 9px; border-radius: 999px; font-style: normal;
+  background: rgba(20,26,21,.78); color: #fff; font-size: .72rem; font-weight: 600; line-height: 1.3;
+}
+.clip__badge--new { left: auto; right: 8px; background: var(--color-clay); }
+.clip__play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.clip__play svg { width: 44px; height: 44px; color: #fff; background: rgba(46,42,34,.55); border-radius: 50%; padding: 11px; box-sizing: border-box; }
+.clip.is-active .clip__play svg { background: var(--color-clay); }
+.clip__title { display: block; margin-top: 8px; font-size: .85rem; line-height: 1.45; color: #45402f; }
+@media (max-width: 900px) {
+  .reviews__layout--stack .reviews__grid { grid-template-columns: repeat(2, 1fr); }
+  .clips__stage { grid-template-columns: 1fr; gap: 22px; }
+  .clips__player { position: static; }
+  .clips__list { display: flex; overflow-x: auto; gap: 14px; padding-bottom: 12px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+  .clip-item { flex: 0 0 132px; scroll-snap-align: start; }
+}
+@media (max-width: 560px) {
+  .reviews__layout--stack .reviews__grid { grid-template-columns: 1fr; }
+  .clips__title { font-size: 1.35rem; }
+  .clips__player .video-facade, .clips__now { max-width: 280px; }
+}
+@media (prefers-reduced-motion: reduce) { .clip__thumb { transition: none; } }
 
 /* Map */
 .map-section__grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
@@ -1195,7 +1249,7 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
         <span class="reviews__score-stars" aria-hidden="true">★★★★★</span>
         <a class="reviews__score-link" href="https://maps.app.goo.gl/nFLFRLGoEjABzDoX6" target="_blank" rel="noopener">ดู<strong>รีวิวจริง</strong>ทั้งหมดบน Google Maps →</a>
       </div>
-      <div class="reviews__layout reviews__layout--dual-video">
+      <div class="reviews__layout reviews__layout--stack">
         <div class="reviews__grid">
           <article class="review-card">
             <span class="review-card__stars" aria-hidden="true">★★★★★</span>
@@ -1218,30 +1272,63 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
             <footer class="review-card__who"><span class="review-card__avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span><cite>คุณ Lanna boyss · รีวิว 5 ดาว Google Maps</cite></footer>
           </article>
         </div>
-        <div class="reviews__video-list">
-          <div class="reviews__video">
-            <button class="video-facade" type="button" data-video-id="tlao0owwTec" data-platform="youtube" aria-label="ชมคลิปรีวิว Deepsleep456 จากช่องเชียงใหม่ม่วนเว่อร์">
-              <img src="images/bathroom/bathtub-outdoor-alt-thumb.webp?v=20260707" width="700" height="933" alt="วิดีโอรีวิวที่พัก Deepsleep456 โดยช่องเชียงใหม่ม่วนเว่อร์" loading="lazy">
-              <span class="video-facade__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
-              <span class="video-facade__label" aria-hidden="true">▶ ชมคลิปรีวิว</span>
-            </button>
-            <p class="reviews__video-caption">โดยช่อง เชียงใหม่ม่วนเว่อร์ บน YouTube</p>
+        <div class="clips" data-clips data-open="เปิดดูบน" data-watch="ดูคลิปนี้">
+          <div class="clips__head">
+            <div>
+              <h3 class="clips__title">คลิปรีวิวจากผู้เข้าพัก</h3>
+              <p class="clips__sub">กดเลือกคลิปที่อยากดูได้เลย คลิปใหม่ล่าสุดอยู่ลำดับแรก</p>
+            </div>
+            <div class="clips__tabs" role="group" aria-label="เลือกแพลตฟอร์ม">
+              <button type="button" class="clips__tab is-active" data-filter="all" aria-pressed="true">ทั้งหมด <span>7</span></button>
+              <button type="button" class="clips__tab" data-filter="youtube" aria-pressed="false">YouTube <span>1</span></button> <button type="button" class="clips__tab" data-filter="facebook" aria-pressed="false">Facebook <span>4</span></button> <button type="button" class="clips__tab" data-filter="tiktok" aria-pressed="false">TikTok <span>2</span></button>
+            </div>
           </div>
-          <div class="reviews__video">
-            <a class="video-facade" href="https://www.facebook.com/share/r/18fHNPGj8e/" target="_blank" rel="noopener" aria-label="ชมคลิปรีวิว Deepsleep456 บน Facebook">
-              <img src="images/exterior/drone-aerial-thumb.webp" width="700" height="466" alt="วิดีโอรีวิวที่พัก Deepsleep456 บน Facebook" loading="lazy">
-              <span class="video-facade__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
-              <span class="video-facade__label" aria-hidden="true">▶ ชมคลิปรีวิว</span>
+          <div class="clips__stage">
+            <div class="clips__player" data-clips-player></div>
+            <ul class="clips__list" aria-label="เลือกคลิปรีวิวที่ต้องการดู">
+          <li class="clip-item" data-platform="tiktok">
+            <a class="clip" href="https://www.tiktok.com/@deepsleep456cm/video/7687861094018321672" target="_blank" rel="noopener" data-platform="tiktok" data-id="7687861094018321672" data-embed="1" data-cover="images/bathroom/bathtub-outdoor-mountain-thumb.webp" data-title="รีวิวล่าสุดจาก TikTok · อ่างแช่ตัวชมวิวภูเขา" aria-label="ดูคลิปนี้: รีวิวล่าสุดจาก TikTok · อ่างแช่ตัวชมวิวภูเขา">
+              <span class="clip__thumb"><img src="images/bathroom/bathtub-outdoor-mountain-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">TikTok</i><i class="clip__badge clip__badge--new">ใหม่</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">รีวิวล่าสุดจาก TikTok · อ่างแช่ตัวชมวิวภูเขา</span>
             </a>
-            <p class="reviews__video-caption">โดยเพจ Deepsleep456 บน Facebook</p>
-          </div>
-          <div class="reviews__video">
-            <a class="video-facade" href="https://www.tiktok.com/@deepsleep456cm/video/7668909296712797447" target="_blank" rel="noopener" aria-label="ชมคลิปรีวิว Deepsleep456 บน TikTok">
-              <img src="images/common/kitchen-counter-thumb.webp" width="700" height="468" alt="วิดีโอรีวิวที่พัก Deepsleep456 บน TikTok" loading="lazy">
-              <span class="video-facade__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
-              <span class="video-facade__label" aria-hidden="true">▶ ชมคลิปรีวิว</span>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/reel/982508551542841" target="_blank" rel="noopener" data-platform="facebook" data-id="982508551542841" data-embed="1" data-cover="images/exterior/dusk-view-1-thumb.webp" data-title="คลิปรีวิวจากเพจ Facebook · บรรยากาศยามเย็น" aria-label="ดูคลิปนี้: คลิปรีวิวจากเพจ Facebook · บรรยากาศยามเย็น">
+              <span class="clip__thumb"><img src="images/exterior/dusk-view-1-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><i class="clip__badge clip__badge--new">ใหม่</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">คลิปรีวิวจากเพจ Facebook · บรรยากาศยามเย็น</span>
             </a>
-            <p class="reviews__video-caption">โดยเพจ Deepsleep456 บน TikTok</p>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/reel/2493967088104735" target="_blank" rel="noopener" data-platform="facebook" data-id="2493967088104735" data-embed="1" data-cover="images/exterior/balcony-lounge-thumb.webp" data-title="คลิปรีวิวจากเพจ Facebook · มุมนั่งเล่นระเบียง" aria-label="ดูคลิปนี้: คลิปรีวิวจากเพจ Facebook · มุมนั่งเล่นระเบียง">
+              <span class="clip__thumb"><img src="images/exterior/balcony-lounge-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><i class="clip__badge clip__badge--new">ใหม่</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">คลิปรีวิวจากเพจ Facebook · มุมนั่งเล่นระเบียง</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/reel/2014898442409636" target="_blank" rel="noopener" data-platform="facebook" data-id="2014898442409636" data-embed="1" data-cover="images/exterior/firepit-sala-thumb.webp" data-title="คลิปรีวิวจากเพจ Facebook · ศาลานั่งเล่นและเตาไฟ" aria-label="ดูคลิปนี้: คลิปรีวิวจากเพจ Facebook · ศาลานั่งเล่นและเตาไฟ">
+              <span class="clip__thumb"><img src="images/exterior/firepit-sala-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><i class="clip__badge clip__badge--new">ใหม่</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">คลิปรีวิวจากเพจ Facebook · ศาลานั่งเล่นและเตาไฟ</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="youtube">
+            <a class="clip" href="https://www.youtube.com/watch?v=tlao0owwTec" target="_blank" rel="noopener" data-platform="youtube" data-id="tlao0owwTec" data-embed="1" data-cover="images/bathroom/bathtub-outdoor-alt-thumb.webp?v=20260707" data-title="โดยช่อง เชียงใหม่ม่วนเว่อร์ บน YouTube" aria-label="ดูคลิปนี้: โดยช่อง เชียงใหม่ม่วนเว่อร์ บน YouTube">
+              <span class="clip__thumb"><img src="images/bathroom/bathtub-outdoor-alt-thumb.webp?v=20260707" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">YouTube</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">โดยช่อง เชียงใหม่ม่วนเว่อร์ บน YouTube</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/share/r/18fHNPGj8e/" target="_blank" rel="noopener" data-platform="facebook" data-id="18fHNPGj8e" data-embed="0" data-cover="images/exterior/drone-aerial-thumb.webp" data-title="คลิปรีวิวจากเพจ Facebook · มุมมองจากโดรน" aria-label="ดูคลิปนี้: คลิปรีวิวจากเพจ Facebook · มุมมองจากโดรน">
+              <span class="clip__thumb"><img src="images/exterior/drone-aerial-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">คลิปรีวิวจากเพจ Facebook · มุมมองจากโดรน</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="tiktok">
+            <a class="clip" href="https://www.tiktok.com/@deepsleep456cm/video/7668909296712797447" target="_blank" rel="noopener" data-platform="tiktok" data-id="7668909296712797447" data-embed="1" data-cover="images/common/kitchen-counter-thumb.webp" data-title="คลิปรีวิวจากเพจ Deepsleep456 บน TikTok" aria-label="ดูคลิปนี้: คลิปรีวิวจากเพจ Deepsleep456 บน TikTok">
+              <span class="clip__thumb"><img src="images/common/kitchen-counter-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">TikTok</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">คลิปรีวิวจากเพจ Deepsleep456 บน TikTok</span>
+            </a>
+          </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -1428,6 +1515,6 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
 </div>
 
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="js/main.js?v=20260915c"></script>
+<script src="js/main.js?v=20261106a"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../images/logo.webp?v=20260707" type="image/webp">
-<link rel="stylesheet" href="../css/style.css?v=20260915c">
+<link rel="stylesheet" href="../css/style.css?v=20261106a">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -531,7 +531,7 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
         <span class="reviews__score-stars" aria-hidden="true">★★★★★</span>
         <a class="reviews__score-link" href="https://maps.app.goo.gl/nFLFRLGoEjABzDoX6" target="_blank" rel="noopener">see all <strong>real reviews</strong> on Google Maps →</a>
       </div>
-      <div class="reviews__layout">
+      <div class="reviews__layout reviews__layout--stack">
         <div class="reviews__grid">
           <article class="review-card">
             <span class="review-card__stars" aria-hidden="true">★★★★★</span>
@@ -554,13 +554,64 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
             <footer class="review-card__who"><span class="review-card__avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg></span><cite>Joey, guest from Singapore · 5-star review on Google Maps</cite></footer>
           </article>
         </div>
-        <div class="reviews__video">
-          <button class="video-facade" type="button" data-video-id="tlao0owwTec" aria-label="Watch the video review of Deepsleep456 by Chiang Mai Muan Ver">
-            <img src="../images/bathroom/bathtub-outdoor-alt-thumb.webp?v=20260707" width="700" height="933" alt="Video review of Deepsleep456 by the Chiang Mai Muan Ver channel" loading="lazy">
-            <span class="video-facade__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
-            <span class="video-facade__label" aria-hidden="true">▶ Watch the video review</span>
-          </button>
-          <p class="reviews__video-caption">By Chiang Mai Muan Ver on YouTube</p>
+        <div class="clips" data-clips data-open="Open on" data-watch="Watch this clip">
+          <div class="clips__head">
+            <div>
+              <h3 class="clips__title">Guest video reviews</h3>
+              <p class="clips__sub">Tap any clip to watch it. The newest clips come first.</p>
+            </div>
+            <div class="clips__tabs" role="group" aria-label="Choose a platform">
+              <button type="button" class="clips__tab is-active" data-filter="all" aria-pressed="true">All <span>7</span></button>
+              <button type="button" class="clips__tab" data-filter="youtube" aria-pressed="false">YouTube <span>1</span></button> <button type="button" class="clips__tab" data-filter="facebook" aria-pressed="false">Facebook <span>4</span></button> <button type="button" class="clips__tab" data-filter="tiktok" aria-pressed="false">TikTok <span>2</span></button>
+            </div>
+          </div>
+          <div class="clips__stage">
+            <div class="clips__player" data-clips-player></div>
+            <ul class="clips__list" aria-label="Choose a review clip to watch">
+          <li class="clip-item" data-platform="tiktok">
+            <a class="clip" href="https://www.tiktok.com/@deepsleep456cm/video/7687861094018321672" target="_blank" rel="noopener" data-platform="tiktok" data-id="7687861094018321672" data-embed="1" data-cover="../images/bathroom/bathtub-outdoor-mountain-thumb.webp" data-title="Latest TikTok review · outdoor tub with mountain view" aria-label="Watch this clip: Latest TikTok review · outdoor tub with mountain view">
+              <span class="clip__thumb"><img src="../images/bathroom/bathtub-outdoor-mountain-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">TikTok</i><i class="clip__badge clip__badge--new">New</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">Latest TikTok review · outdoor tub with mountain view</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/reel/982508551542841" target="_blank" rel="noopener" data-platform="facebook" data-id="982508551542841" data-embed="1" data-cover="../images/exterior/dusk-view-1-thumb.webp" data-title="Facebook review reel · evening at the house" aria-label="Watch this clip: Facebook review reel · evening at the house">
+              <span class="clip__thumb"><img src="../images/exterior/dusk-view-1-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><i class="clip__badge clip__badge--new">New</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">Facebook review reel · evening at the house</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/reel/2493967088104735" target="_blank" rel="noopener" data-platform="facebook" data-id="2493967088104735" data-embed="1" data-cover="../images/exterior/balcony-lounge-thumb.webp" data-title="Facebook review reel · balcony lounge" aria-label="Watch this clip: Facebook review reel · balcony lounge">
+              <span class="clip__thumb"><img src="../images/exterior/balcony-lounge-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><i class="clip__badge clip__badge--new">New</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">Facebook review reel · balcony lounge</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/reel/2014898442409636" target="_blank" rel="noopener" data-platform="facebook" data-id="2014898442409636" data-embed="1" data-cover="../images/exterior/firepit-sala-thumb.webp" data-title="Facebook review reel · sala and fire pit" aria-label="Watch this clip: Facebook review reel · sala and fire pit">
+              <span class="clip__thumb"><img src="../images/exterior/firepit-sala-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><i class="clip__badge clip__badge--new">New</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">Facebook review reel · sala and fire pit</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="youtube">
+            <a class="clip" href="https://www.youtube.com/watch?v=tlao0owwTec" target="_blank" rel="noopener" data-platform="youtube" data-id="tlao0owwTec" data-embed="1" data-cover="../images/bathroom/bathtub-outdoor-alt-thumb.webp?v=20260707" data-title="By Chiang Mai Muan Ver on YouTube" aria-label="Watch this clip: By Chiang Mai Muan Ver on YouTube">
+              <span class="clip__thumb"><img src="../images/bathroom/bathtub-outdoor-alt-thumb.webp?v=20260707" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">YouTube</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">By Chiang Mai Muan Ver on YouTube</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="facebook">
+            <a class="clip" href="https://www.facebook.com/share/r/18fHNPGj8e/" target="_blank" rel="noopener" data-platform="facebook" data-id="18fHNPGj8e" data-embed="0" data-cover="../images/exterior/drone-aerial-thumb.webp" data-title="Facebook review reel · drone view" aria-label="Watch this clip: Facebook review reel · drone view">
+              <span class="clip__thumb"><img src="../images/exterior/drone-aerial-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">Facebook</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">Facebook review reel · drone view</span>
+            </a>
+          </li>
+          <li class="clip-item" data-platform="tiktok">
+            <a class="clip" href="https://www.tiktok.com/@deepsleep456cm/video/7668909296712797447" target="_blank" rel="noopener" data-platform="tiktok" data-id="7668909296712797447" data-embed="1" data-cover="../images/common/kitchen-counter-thumb.webp" data-title="Review by the Deepsleep456 page on TikTok" aria-label="Watch this clip: Review by the Deepsleep456 page on TikTok">
+              <span class="clip__thumb"><img src="../images/common/kitchen-counter-thumb.webp" width="300" height="533" alt="" loading="lazy"><i class="clip__badge">TikTok</i><span class="clip__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+              <span class="clip__title">Review by the Deepsleep456 page on TikTok</span>
+            </a>
+          </li>
+            </ul>
+          </div>
         </div>
       </div>
       <p class="reviews__note">Quotes from real guest reviews on Google Maps (Thai reviews shown as translated by Google) — see all reviews with guest photos via the link above</p>
@@ -745,6 +796,6 @@ src="https://www.facebook.com/tr?id=1410881780914301&ev=PageView&noscript=1"
 </div>
 
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-<script src="../js/main.js?v=20260915c"></script>
+<script src="../js/main.js?v=20261106a"></script>
 </body>
 </html>

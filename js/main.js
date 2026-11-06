@@ -222,6 +222,96 @@
     }, { once: true });
   }
 
+  // Video review hub: a player plus a list of clips. The newest clip is shown first; the embed (YouTube / TikTok / Facebook)
+  // is only loaded after the visitor taps, so no third-party script slows the first page load. Clips whose data-embed is
+  // "0" (a share link we cannot embed) simply open on their own platform. Without JavaScript every clip is a normal link.
+  var clipsRoot = document.querySelector("[data-clips]");
+  if (clipsRoot) {
+    var clipLinks = clipsRoot.querySelectorAll(".clip");
+    var clipPlayer = clipsRoot.querySelector("[data-clips-player]");
+    var clipTabs = clipsRoot.querySelectorAll(".clips__tab");
+    var CLIP_NAMES = { youtube: "YouTube", facebook: "Facebook", tiktok: "TikTok" };
+    var clipEmbedUrl = function (a) {
+      var id = a.getAttribute("data-id");
+      var p = a.getAttribute("data-platform");
+      if (p === "youtube") return "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&playsinline=1";
+      if (p === "tiktok") return "https://www.tiktok.com/embed/v2/" + id;
+      return "https://www.facebook.com/plugins/video.php?href=" + encodeURIComponent(a.href) + "&show_text=false&autoplay=true";
+    };
+    var showClip = function (a, play) {
+      for (var i = 0; i < clipLinks.length; i++) clipLinks[i].classList.toggle("is-active", clipLinks[i] === a);
+      var title = a.getAttribute("data-title") || "";
+      var platform = CLIP_NAMES[a.getAttribute("data-platform")] || "";
+      clipPlayer.innerHTML = "";
+      var frame = document.createElement("button");
+      frame.type = "button";
+      frame.className = "video-facade";
+      frame.setAttribute("aria-label", clipsRoot.getAttribute("data-watch") + ": " + title);
+      var img = document.createElement("img");
+      img.src = a.getAttribute("data-cover");
+      img.alt = "";
+      img.width = 300; img.height = 533;
+      var pl = document.createElement("span");
+      pl.className = "video-facade__play";
+      pl.setAttribute("aria-hidden", "true");
+      pl.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+      frame.appendChild(img); frame.appendChild(pl);
+      clipPlayer.appendChild(frame);
+      var now = document.createElement("p");
+      now.className = "clips__now";
+      var strong = document.createElement("strong");
+      strong.textContent = title;
+      var open = document.createElement("a");
+      open.className = "clips__open";
+      open.href = a.href; open.target = "_blank"; open.rel = "noopener";
+      open.textContent = clipsRoot.getAttribute("data-open") + " " + platform + " \u2197";
+      now.appendChild(strong); now.appendChild(document.createElement("br")); now.appendChild(open);
+      clipPlayer.appendChild(now);
+      var load = function () {
+        var iframe = document.createElement("iframe");
+        iframe.src = clipEmbedUrl(a);
+        iframe.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; clipboard-write; web-share");
+        iframe.setAttribute("allowfullscreen", "");
+        iframe.title = title;
+        frame.innerHTML = "";
+        frame.appendChild(iframe);
+        frame.style.cursor = "default";
+      };
+      if (a.getAttribute("data-embed") === "1") {
+        if (play) load(); else frame.addEventListener("click", load, { once: true });
+      } else {
+        frame.addEventListener("click", function () { window.open(a.href, "_blank", "noopener"); });
+      }
+    };
+    for (var ci = 0; ci < clipLinks.length; ci++) {
+      clipLinks[ci].addEventListener("click", function (e) {
+        e.preventDefault();
+        showClip(this, true);
+        if (window.matchMedia("(max-width: 900px)").matches) clipPlayer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
+    for (var ti = 0; ti < clipTabs.length; ti++) {
+      clipTabs[ti].addEventListener("click", function () {
+        var f = this.getAttribute("data-filter");
+        for (var k = 0; k < clipTabs.length; k++) {
+          var on = clipTabs[k] === this;
+          clipTabs[k].classList.toggle("is-active", on);
+          clipTabs[k].setAttribute("aria-pressed", on ? "true" : "false");
+        }
+        var items = clipsRoot.querySelectorAll(".clip-item");
+        var first = null;
+        for (var m = 0; m < items.length; m++) {
+          var show = f === "all" || items[m].getAttribute("data-platform") === f;
+          items[m].hidden = !show;
+          if (show && !first) first = items[m].querySelector(".clip");
+        }
+        var current = clipsRoot.querySelector(".clip.is-active");
+        if (first && (!current || current.parentNode.hidden)) showClip(first, false);
+      });
+    }
+    if (clipLinks.length) showClip(clipLinks[0], false);
+  }
+
   // Influencer / affiliate referral tracking. A partner shares a link like
   // ?ref=NEWVI; we remember the code for the session, show a banner, and
   // rewrite LINE links to a pre-filled chat message so the code travels with
